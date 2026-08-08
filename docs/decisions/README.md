@@ -102,7 +102,7 @@ Also added inline, for the same reason: [0009](ADR-0009.md) testing strategy, [0
 |---|---|---|
 | [0049](ADR-0049.md) | Multi-role resolution and approval authority limits | **Accepted** — supersedes 0043 |
 | [0050](ADR-0050.md) | Frontend application stack for `apps/web` | **Accepted** |
-| 0051 | Offline sync strategy | **Reserved, not yet written** |
+| 0051 | Offline sync strategy | **Reserved** — spike in progress |
 
 **0051 is a known gap, deliberately recorded rather than left implicit.** The requirements call for offline support for mobile sales reps and no ADR says how it works. Hand-rolling a mutation queue with replay and conflict resolution on a *quotation* system risks two divergent versions of a price, which is a correctness problem with financial consequences. It should land as `Proposed — BLOCKED` pending a spike that compares a local-first sync engine against hand-rolling, evaluated specifically against RLS (ADR-0022) and `organization_id` scoping (ADR-0017). The number is held so the gap cannot be forgotten.
 
@@ -112,7 +112,7 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 
 | Wave | ADRs | Why here |
 |---|---|---|
-| **W1a — substrate** | 0001, 0002 | These are not *governed by* the enforcement gate; they **are** the substrate it presupposes. Dependency-cruiser, CI, and the agent guardrails have nothing to run against until a workspace exists. |
+| **W1a — substrate** ✅ **Accepted 2026-08-08** | 0001, 0002 | These are not *governed by* the enforcement gate; they **are** the substrate it presupposes. Dependency-cruiser, CI, and the agent guardrails have nothing to run against until a workspace exists. |
 | **W1b — machinery** | 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. Ratified **and installed** — running and green, not merely Accepted. |
 | **W2 — architecture shape** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | |
 | **W3 — data foundation** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | |
