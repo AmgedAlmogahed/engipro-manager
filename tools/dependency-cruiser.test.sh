@@ -47,6 +47,27 @@ if ! [ -x "$ROOT/node_modules/.bin/depcruise" ]; then
 fi
 
 DEPCRUISE="$ROOT/node_modules/.bin/depcruise"
+
+# dependency-cruiser needs the TypeScript compiler to resolve .ts sources. Without
+# it, it emits `missing-typescript-transpiler`, parses nothing, and reports
+# "0 modules, 0 dependencies cruised" — while exiting 0.
+#
+# This bit us: the first local run of this file passed 4/4 only because a stale
+# node_modules from the pre-monorepo npm install still had typescript hoisted at the
+# repo root. In clean CI there was no typescript, the rules matched nothing, and the
+# $1 back-reference verification this file exists to perform silently did not happen.
+#
+# So: assert the transpiler is present before trusting any result below. An absent
+# transpiler makes every assertion in this file vacuous, which is the exact
+# failure mode the file was written to catch.
+if ! [ -d "$ROOT/node_modules/typescript" ]; then
+  printf 'FAIL  typescript is not installed.\n'
+  printf '      dependency-cruiser cannot parse .ts sources without it and will\n'
+  printf '      report "0 modules cruised" while exiting 0 — making every\n'
+  printf '      assertion in this file pass vacuously.\n'
+  printf '      Add typescript to the root devDependencies.\n'
+  exit 1
+fi
 TMP=$(mktemp -d)
 # shellcheck disable=SC2064
 trap "rm -rf '$TMP'" EXIT
