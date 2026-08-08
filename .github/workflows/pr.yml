@@ -174,13 +174,8 @@ jobs:
       - name: Unit + domain tests (ADR-0009, ADR-0029)
         run: pnpm --filter @engipro/api test
 
-      # SKIPPED — subject does not exist: no integration lane yet.
-      # ACTIVATE WITH: the PR that lands the integration harness. Its service-container
-      # pattern is already written once, in .github/workflows/poc-multischema.yml, and
-      # the six c<NN> specs already contain their DB-dependent assertions as skipped
-      # tests naming this lane.  (ADR-0009, ADR-0037)
-      # - name: Integration tests (real PostgreSQL)
-      #   run: pnpm test:integration
+      # Integration tests run in their own job below — they need a service container,
+      # and attaching one to this job would start a database for every unit run.
 
       # SKIPPED — subject does not exist: no permission model implemented.
       # ACTIVATE WITH: the PR that implements the resolver.  (ADR-0021, ADR-0049, ADR-0044)
@@ -202,3 +197,52 @@ jobs:
       #   run: docker buildx build --platform linux/arm64 -f infra/docker/Dockerfile.api .
       # - name: Trivy scan
       #   uses: aquasecurity/trivy-action@master
+
+  # ---------------------------------------------------------------------------
+  # Integration lane. (ADR-0009, ADR-0037)
+  #
+  # The service-container pattern is the one proven by the multi-schema PoC
+  # (.github/workflows/poc-multischema.yml), lifted rather than rewritten.
+  #
+  # The lane's first test asserts the HARNESS: that a real PostgreSQL is connected and
+  # that writes do not survive a test. Isolation is the property every later
+  # integration test inherits — without it, failures present as flakiness and get
+  # "fixed" by reordering tests, which hides the real defect.
+  #
+  # The runner FAILS when it finds zero test files, and FAILS when DATABASE_URL is
+  # absent. Neither is a skip: "integration tests passed" with nothing run is the most
+  # misleading green a pipeline can produce (ADR-0048 standing rule).
+  # ---------------------------------------------------------------------------
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: engipro
+          POSTGRES_USER: engipro
+          POSTGRES_DB: engipro_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U engipro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Integration tests (real PostgreSQL)
+        env:
+          DATABASE_URL: postgres://engipro:engipro@localhost:5432/engipro_test
+        run: pnpm --filter @engipro/api test:integration

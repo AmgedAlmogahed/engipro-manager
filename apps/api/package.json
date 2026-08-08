@@ -7,7 +7,8 @@
     "build": "nest build",
     "typecheck": "tsc --noEmit",
     "test:adapter": "tsx --test \"src/**/*.smoke.test.ts\"",
-    "test": "tsx --test \"src/**/*.spec.ts\""
+    "test": "tsx --test \"src/**/*.spec.ts\"",
+    "test:integration": "node ../../tools/run-integration.mjs"
   },
   "dependencies": {
     "@fastify/static": "catalog:",
@@ -15,6 +16,7 @@
     "@nestjs/core": "catalog:",
     "@nestjs/platform-fastify": "catalog:",
     "@nestjs/swagger": "catalog:",
+    "postgres": "catalog:",
     "reflect-metadata": "catalog:"
   },
   "devDependencies": {
