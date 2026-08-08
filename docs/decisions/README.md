@@ -115,17 +115,19 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 | **W1a — substrate** ✅ **Accepted 2026-08-08** | 0001, 0002 | These are not *governed by* the enforcement gate; they **are** the substrate it presupposes. Dependency-cruiser, CI, and the agent guardrails have nothing to run against until a workspace exists. |
 | **W1b — machinery** ✅ **Accepted 2026-08-08** | 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. Ratified **and installed** — running and green, not merely Accepted. Fully closed: the prototype-freeze hook is wired via `.claude/settings.json`, `CLAUDE.md` is committed and length-checked, and `$1` back-reference support is verified on dependency-cruiser 18.1.1 rather than assumed. |
 | **W2 — architecture shape** ✅ **Accepted 2026-08-08** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | Shells scaffolded: `packages/domain`, `packages/contracts`, `apps/api`, `apps/web`. ADR-0008's live-fire demo run — it found that `no-vendor-in-domain-or-application` had never fired under pnpm. See ADR-0008. |
-| **W3 — data foundation** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | |
-| **W4 — identity and authorization** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
+| **W3 — data foundation** ✅ **Accepted 2026-08-08** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | **No migration may land yet**: the ADR-0011/0013 multi-schema PoC and the ADR-0014 migration-lint live-fire are both unmet entry conditions. |
+| **W4 — identity and authorization** ✅ **Accepted 2026-08-08** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
 | **W5 — platform mechanics** | 0024, then 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. |
 | **W6 — infrastructure** | 0031, 0032, 0033, 0034, 0035, 0036, 0041 | |
-| **W7 — conditional and scope** | 0039, 0040, 0045, 0046, 0047, 0048 | |
+| **W7 — conditional and scope** | 0039 ✅, 0040, 0045, 0046, 0047, 0048 ✅ | 0048 was **pulled forward and accepted 2026-08-08** at the domain-code threshold, per gate 3. Its glossary and lint are installed and live-fired. |
 
 **Three gates, in plain terms:**
 
 1. **No code beyond the W1a skeleton until W1b is installed and green.**
 2. **No migration before W3 and W4.**
-3. **No domain module before [0048](ADR-0048.md) and its `docs/mined/` documents** ([0003](ADR-0003.md)). 0048 is listed last by dependency but is a hard gate on domain code — if domain work is reached before W7, pull 0048 forward.
+3. **No domain module before [0048](ADR-0048.md) and its `docs/mined/` documents** ([0003](ADR-0003.md)). ✅ **Satisfied 2026-08-08** — 0048 was pulled forward and accepted, `docs/glossary.md` is in place, and the glossary lint is live-fired. `docs/mined/identity.md` exists, so the identity module is cleared.
+
+**Two further entry conditions gate the first migration**, both currently unmet: the ADR-0011/0013 multi-schema proof of concept, and the ADR-0014 migration-lint live-fire. Neither is advice; both are gates.
 
 ### Why W1 splits
 

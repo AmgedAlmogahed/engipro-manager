@@ -50,6 +50,12 @@ jobs:
       - name: Path audit (ADR-0019/0047 near-miss)
         run: node tools/path-audit.mjs
 
+      # ACTIVATED 2026-08-08 by the PR that added docs/glossary.md.
+      # Live-fired before being trusted: verified it passes a clean tree and rejects
+      # PipelineEntry, ServiceCategory and isLeadPricer.
+      - name: Glossary lint (ADR-0048, C13)
+        run: node tools/check-glossary.mjs
+
       - name: Secret scan (ADR-0035)
         uses: gitleaks/gitleaks-action@v2
         env:

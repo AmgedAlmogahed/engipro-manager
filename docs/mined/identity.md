@@ -142,12 +142,23 @@ Illegal (the suite asserts these throw): `archived → *` (terminal), any self-t
 | `c10-identity-events-audited.spec.ts` | C10 (identity slice) | Login success, login failure, refresh, logout, role grant/revoke, and every §5 transition produce an audit row with actor, timestamp, and reason where required |
 | `char-refresh-rotation.spec.ts` | — (characterization, **no C-number: correct in old system**) | A refresh token is single-use: second use fails, a new pair is issued on first use. Re-encodes verified-good ABAK_ERP behaviour |
 
+## 6b. Prior-art name → canonical name (ADR-0048)
+
+| Prior-art name | Canonical | Note |
+|---|---|---|
+| `User.role` / `UserRole` enum | — (rejected concept) | Roles are rows in `access.roles`; a user *holds roles* via `user_roles`. The enum has no successor by design |
+| `refreshToken` table (JWT stored) | opaque session/refresh token (ADR-0020) | Old rows were signed JWTs in a table; new tokens are opaque, rotating, family-revocable |
+| `firstName` / `lastName` | `name_en` / `name_ar` | Bilingual display names (ADR-0019); no structured split — see resolved question c |
+| `avatar` (URL) | `avatar_key` | Object-storage key (ADR-0034) |
+| `ServiceCategory` (used as department) | `Department` | ADR-0048's decided rename; identity links users to real departments |
+| `@Public()` decorator | unchanged | Concept kept; constraints owned by ADR-0046 |
+
 ## 7. Open questions
 
 | Question | Owner | Blocks |
 |---|---|---|
 | a. Session mechanism: server-side sessions vs JWT+rotation; separate secrets; revocation story | ADR-0020 (W4 review — planning session) | `apps/api` identity module |
 | b. Invitation flow: admin-creates-with-temp-password vs email invite link (SMTP dependency day one?) | User (morning question) | `invited` state implementation, not the schema |
-| c. User names: is a structured (first/last) name needed on any legal/financial document, or are bilingual display names sufficient? | ADR-0019 review (W3) | `User` contract finalization |
+| ~~c. User names: structured first/last vs bilingual display names~~ | **RESOLVED 2026-08-08** | No structured split. `name_ar`/`name_en` only — recorded in ADR-0019. Saudi B2B documents carry a full name; a consultancy's quotations, POs and contracts never decompose it |
 | d. Password policy + 2FA scope for launch | ADR-0020 | Nothing at schema level |
 | e. System actor representation: service-account user row vs synthetic well-known id in audit | ADR-0020 + ADR-0024 (W4/W5) | Audit FK shape for cron writes |
