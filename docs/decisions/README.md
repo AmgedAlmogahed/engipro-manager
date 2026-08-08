@@ -112,7 +112,8 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 
 | Wave | ADRs | Why here |
 |---|---|---|
-| **W1 — enforcement machinery** | 0001, 0002, 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. |
+| **W1a — substrate** | 0001, 0002 | These are not *governed by* the enforcement gate; they **are** the substrate it presupposes. Dependency-cruiser, CI, and the agent guardrails have nothing to run against until a workspace exists. |
+| **W1b — machinery** | 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. Ratified **and installed** — running and green, not merely Accepted. |
 | **W2 — architecture shape** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | |
 | **W3 — data foundation** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | |
 | **W4 — identity and authorization** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
@@ -122,9 +123,23 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 
 **Three gates, in plain terms:**
 
-1. **No code before W1.**
+1. **No code beyond the W1a skeleton until W1b is installed and green.**
 2. **No migration before W3 and W4.**
 3. **No domain module before [0048](ADR-0048.md) and its `docs/mined/` documents** ([0003](ADR-0003.md)). 0048 is listed last by dependency but is a hard gate on domain code — if domain work is reached before W7, pull 0048 forward.
+
+### Why W1 splits
+
+An earlier form of gate 1 read "no code before W1" with 0001 and 0002 inside W1. That is circular and therefore unsatisfiable: the machinery cannot be installed until a workspace exists, and the workspace cannot be created until the machinery is ratified. A gate that cannot be satisfied is a bug in the gate, so W1a is exempt from it.
+
+**The exemption is bounded to exactly this, so that "substrate" does not become a loophole:**
+
+- `pnpm-workspace.yaml`, `turbo.json`, root `package.json`, `.npmrc`, `.gitignore`
+- empty `apps/` and `packages/` directories
+- the `git mv` of the flat prototype into `apps/prototype`
+
+Nothing else. **No `apps/api`, no `apps/web`, no `packages/*` contents, no `infra/docker/`, and not one line of application code** — including `apps/web`, even though [ADR-0050](ADR-0050.md) is Accepted and the stack is settled. Scaffolding an application is precisely the code the machinery exists to govern from its first commit, and ADR-0032's thesis is that the first commit is where this is won or lost.
+
+The skeleton and the `git mv` land as **two separate commits**, so the rename stays a reviewable pure-rename diff.
 
 Two things are already ratified ahead of their wave, deliberately: **0039, 0042, 0044, 0049** because they were blocking, and the **0032 amendment** for the frontend topology, because an unratified framework assumption sitting inside an infrastructure document for the duration of W1–W5 is the C1 shape — a stale assumption surviving because the document that contradicts it is somewhere else.
 
