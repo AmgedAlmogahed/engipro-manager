@@ -83,7 +83,7 @@ Therefore: **an ADR without an enforcement mechanism is a suggestion, and sugges
 | [0042](ADR-0042.md) | Audit retention — **Accepted** |
 | [0043](ADR-0043.md) | Multi-role conflict resolution — **Superseded by 0049** |
 | [0044](ADR-0044.md) | Explicit deny — **Accepted**, dropped |
-| [0045](ADR-0045.md) | No cutover or data migration |
+| [0045](ADR-0045.md) | No cutover or data migration — **HELD**, awaiting confirmation that the deployed OCI database held test data only |
 
 ### Added during the completeness check
 These were not in the agreed decision set. Each closes a conflict-register item that otherwise had no home, and each is expensive to retrofit.
@@ -118,8 +118,8 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 | **W3 — data foundation** ✅ **Accepted 2026-08-08** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | **No migration may land yet**: the ADR-0011/0013 multi-schema PoC and the ADR-0014 migration-lint live-fire are both unmet entry conditions. |
 | **W4 — identity and authorization** ✅ **Accepted 2026-08-08** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
 | **W5 — platform mechanics** ✅ **Accepted 2026-08-08** | 0024, 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. ADR-0029's first consumer is the identity `User` status machine — read `apps/api/src/modules/identity/domain/user.ts` before adding a state machine elsewhere. |
-| **W6 — infrastructure** | 0031, 0032, 0033, 0034, 0035, 0036, 0041 | |
-| **W7 — conditional and scope** | 0039 ✅, 0040, 0045, 0046, 0047, 0048 ✅ | 0048 was **pulled forward and accepted 2026-08-08** at the domain-code threshold, per gate 3. Its glossary and lint are installed and live-fired. |
+| **W6 — infrastructure** ✅ **Accepted 2026-08-08** | 0031, 0032, 0033, 0034, 0035, 0036, 0041 | 0032 and 0033 carry the ADR-0050 frontend amendment. 0041's targets are initial values that drive alerts only — no destructive action — so confirmation against real usage cannot precede real usage. |
+| **W7 — conditional and scope** ✅ **Accepted 2026-08-08** except 0045 | 0039 ✅, 0040 ✅, **0045 HELD**, 0046 ✅, 0047 ✅, 0048 ✅ | 0048 was **pulled forward and accepted 2026-08-08** at the domain-code threshold, per gate 3. Its glossary and lint are installed and live-fired. |
 
 **Three gates, in plain terms:**
 

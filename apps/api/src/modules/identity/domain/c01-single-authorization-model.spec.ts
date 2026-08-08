@@ -40,9 +40,38 @@ test('the User aggregate exposes no role', () => {
   // rejects the direct assertion. Worth keeping the double cast rather than widening
   // UserSnapshot — the snapshot type being closed is part of what this test asserts.
   const snapshot = u.toSnapshot() as unknown as Record<string, unknown>;
-  for (const key of ['role', 'roles', 'userRole', 'permissions']) {
-    assert.equal(key in snapshot, false, `snapshot must not carry "${key}" — that is C1's root`);
+
+  // The forbidden keys are DERIVED from the glossary's rejected synonyms rather than
+  // hardcoded here. Two reasons, and the second is the better one:
+  //   1. Hardcoding them meant writing the rejected token, which the glossary lint
+  //      correctly flags — string literals are where a rejected term does the most
+  //      damage, so they are scanned.
+  //   2. A new rejected synonym now extends this assertion automatically. A hardcoded
+  //      list would have gone stale the first time the glossary grew, and gone stale
+  //      silently, which is this whole branch's recurring failure.
+  const glossary = readFileSync(
+    `${import.meta.dirname}/../../../../../../docs/glossary.md`,
+    'utf8',
+  );
+  const normalise = (s: string) => s.toLowerCase().replace(/[_-]/g, '');
+  const rejectedNorms = new Set(
+    [...glossary.matchAll(/`([^`]+)`/g)].map((m) => normalise(m[1] ?? '')),
+  );
+  assert.ok(rejectedNorms.size > 0, 'the glossary must yield terms, or this asserts nothing');
+
+  for (const key of Object.keys(snapshot)) {
+    assert.equal(
+      rejectedNorms.has(normalise(key)),
+      false,
+      `snapshot key "${key}" is a glossary-rejected term — a role on the aggregate is C1's root`,
+    );
   }
+  // And the concept itself is absent under any spelling.
+  assert.equal(
+    Object.keys(snapshot).some((k) => normalise(k).includes('role')),
+    false,
+    'no snapshot key may mention a role: permissions resolve server-side per request',
+  );
 });
 
 test('the identity domain contains no role literal', () => {

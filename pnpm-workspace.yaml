@@ -39,6 +39,14 @@ catalog:
   '@fastify/static': ^9.3.0
   tsx: 4.23.11
 
+  # ORM (ADR-0011, ratified W2). Installed at the workspace root for now because the
+  # first consumer is the multi-schema proof of concept in tools/poc/, which is an
+  # ENTRY CONDITION for the first migration (ADR-0011 rider). A bake-off you cannot run
+  # is not a gate. Moves into packages/database when that package lands.
+  drizzle-orm: ^0.45.2
+  drizzle-kit: ^0.31.10
+  postgres: ^3.4.9
+
   # Frontend (ADR-0050). Tailwind is a BUILD dependency — never a CDN <script>,
   # which is what the frozen prototype does and what the build assertion blocks.
   '@tanstack/react-query': ^5.101.4

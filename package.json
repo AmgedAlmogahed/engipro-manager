@@ -20,10 +20,14 @@
     "check:purity": "sh tools/check-domain-purity.sh",
     "check:no-cdn": "node tools/assert-no-cdn.mjs apps/web/dist/index.html",
     "check:glossary": "node tools/check-glossary.mjs",
-    "check:tiers": "node tools/check-module-tiers.mjs"
+    "check:tiers": "node tools/check-module-tiers.mjs",
+    "poc:multischema": "node tools/poc/multischema/run.mjs"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.1.1",
+    "drizzle-kit": "catalog:",
+    "drizzle-orm": "catalog:",
+    "postgres": "catalog:",
     "turbo": "^2.10.9",
     "typescript": "catalog:"
   }

@@ -52,7 +52,8 @@ function parseRejected() {
     if (!rejected || rejected === '—') continue;
 
     for (const m of rejected.matchAll(/`([^`]+)`/g)) {
-      out.push({ term: m[1], canonical });
+      const term = m[1];
+      out.push({ term, canonical, norm: term.toLowerCase().replace(/[_-]/g, '') });
     }
   }
   return out;
@@ -99,8 +100,54 @@ const files = fixtureIdx !== -1 ? [process.argv[fixtureIdx + 1]] : SCAN_DIRS.fla
  * `.sql` and `.json` are scanned whole: neither has comments in the forms below, and
  * both contain nothing but names.
  */
+/**
+ * A character scanner, NOT a regex.
+ *
+ * A regex stripper corrupts string literals: `'https://example.com'` contains `//`, so
+ * a naive line-comment rule truncates the line and the rest of it stops being scanned.
+ * That matters specifically here, because **string literals are exactly where rejected
+ * terms do the most damage** — a permission key `'servicecategory:read'`, an API field
+ * name, a status literal. Silently dropping the tail of any line containing a URL
+ * would have made this lint blind in the places it most needs to see.
+ *
+ * Comment content is replaced with spaces rather than removed, so reported line numbers
+ * still match the file on disk.
+ */
 function stripTsComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  let out = '';
+  let i = 0;
+  // 'code' | 'line' | 'block' | a quote character for string/template state
+  let state = 'code';
+
+  while (i < src.length) {
+    const c = src[i];
+    const next = src[i + 1];
+
+    if (state === 'code') {
+      if (c === '/' && next === '/') { state = 'line'; out += '  '; i += 2; continue; }
+      if (c === '/' && next === '*') { state = 'block'; out += '  '; i += 2; continue; }
+      if (c === '"' || c === "'" || c === '`') { state = c; out += c; i += 1; continue; }
+      out += c; i += 1; continue;
+    }
+
+    if (state === 'line') {
+      if (c === '\n') { state = 'code'; out += '\n'; i += 1; continue; }
+      out += ' '; i += 1; continue;
+    }
+
+    if (state === 'block') {
+      if (c === '*' && next === '/') { state = 'code'; out += '  '; i += 2; continue; }
+      out += c === '\n' ? '\n' : ' '; i += 1; continue;
+    }
+
+    // Inside a string or template literal: preserve everything verbatim, and respect
+    // escapes so `'it\'s'` does not end the literal early.
+    if (c === '\\') { out += c + (next ?? ''); i += 2; continue; }
+    if (c === state) { state = 'code'; out += c; i += 1; continue; }
+    out += c; i += 1;
+  }
+
+  return out;
 }
 
 const findings = [];
@@ -112,12 +159,29 @@ for (const file of files) {
     // An eslint-style opt-out is deliberately NOT supported. ADR-0008's suppression
     // policy applies: an exception is a glossary change, reviewed, never an inline
     // comment that no reviewer sees again.
-    for (const { term, canonical } of rejected) {
-      // Whole-identifier match, so `Category` does not fire inside `CategoryFree`
-      // and `Quote` does not fire inside `Quotation`.
-      const re = new RegExp(`(^|[^A-Za-z0-9_])${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^A-Za-z0-9_]|$)`);
-      if (re.test(line)) {
-        findings.push({ file, line: i + 1, term, canonical, text: line.trim().slice(0, 100) });
+    // Tokenise, then compare NORMALISED forms: lowercase with `_` and `-` removed.
+    //
+    // Matching the literal spelling case-sensitively missed the case that matters most.
+    // A permission key is lowercase by convention (`module:action`), so
+    // `'servicecategory:read'` is real drift and slipped straight through a
+    // case-sensitive check for `ServiceCategory`. Normalising catches ServiceCategory,
+    // service_category, serviceCategory, SERVICE_CATEGORY and service-category from one
+    // glossary entry, which also stops the rejected-synonyms column from having to
+    // enumerate every casing anyone might invent.
+    //
+    // Tokens are whole, so `Category` does not fire inside `CategoryFree` and `Quote`
+    // does not fire inside `Quotation`.
+    for (const raw of line.match(/[A-Za-z0-9_-]+/g) ?? []) {
+      const norm = raw.toLowerCase().replace(/[_-]/g, '');
+      const hit = rejected.find((r) => r.norm === norm);
+      if (hit) {
+        findings.push({
+          file,
+          line: i + 1,
+          term: raw,
+          canonical: hit.canonical,
+          text: line.trim().slice(0, 100),
+        });
       }
     }
   });
