@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Build caches
+.turbo
+*.tsbuildinfo
+
+# Secrets never enter version control — a leaked key requires rotation even
+# after removal, because git history persists (ADR-0035).
+.env
+.env.*
+!.env.example
+*.key
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

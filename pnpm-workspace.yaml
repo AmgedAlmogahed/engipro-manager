@@ -1,0 +1,26 @@
+# Workspace definition. See ADR-0001.
+#
+# apps/prototype is deliberately ABSENT. ADR-0002 freezes it and excludes it
+# from the dependency graph; leaving it out of the workspace is the strongest
+# mechanical form of that exclusion — it cannot import a workspace package and
+# no workspace package can import it, because pnpm does not link it at all.
+# It stays runnable on its own npm lockfile.
+packages:
+  - 'apps/api'
+  - 'apps/web'
+  - 'packages/*'
+
+# Catalogs pin shared dependency versions in ONE place, so drift between
+# packages becomes impossible rather than merely discouraged (ADR-0001).
+# Consumers reference these as `"react": "catalog:"`.
+#
+# Seeded from the versions the prototype already runs, so apps/web starts from
+# a known-good set rather than whatever is newest on the day it is scaffolded.
+catalog:
+  react: ^19.2.3
+  react-dom: ^19.2.3
+  react-router-dom: ^7.12.0
+  typescript: ~5.8.2
+  vite: ^6.2.0
+  '@vitejs/plugin-react': ^5.0.0
+  '@types/node': ^22.14.0
