@@ -1,0 +1,73 @@
+{
+  "_comment": [
+    "Packages that may not enter this workspace, each with the ADR that forbids it.",
+    "",
+    "A denied dependency is not a style preference — in each case adopting the package",
+    "would silently reverse a ratified architectural decision. Installing one is a",
+    "SUPERSESSION of its ADR, which is a reviewed decision, not a drift.",
+    "",
+    "Checked by tools/check-dependency-denylist.mjs over every workspace package.json."
+  ],
+  "denied": [
+    {
+      "pattern": "@powersync/",
+      "adr": "ADR-0051",
+      "reason": "Replication-based sync bypasses RLS (ADR-0022) and moves per-user filtering into engine-side sync rules — a second authorization model beside scopeFilter(), which is C1 reborn at the sync layer."
+    },
+    {
+      "pattern": "electric-sql",
+      "adr": "ADR-0051",
+      "reason": "ElectricSQL is the recorded ESCALATION path, not the starting point. Adopting it requires superseding ADR-0051, with shape definitions generated from the permission catalog so the second read-scope surface is derived rather than parallel."
+    },
+    {
+      "pattern": "@electric-sql/",
+      "adr": "ADR-0051",
+      "reason": "See electric-sql."
+    },
+    {
+      "pattern": "@rocicorp/zero",
+      "adr": "ADR-0051",
+      "reason": "Requires a zero-cache service and replaces the decided client data layer wholesale with ZQL (ADR-0050)."
+    },
+    {
+      "pattern": "prisma",
+      "adr": "ADR-0011",
+      "reason": "Drizzle is the decided ORM and its multi-schema proof of concept passed. Prisma is the recorded fallback ONLY if that PoC had failed; it did not."
+    },
+    {
+      "pattern": "@prisma/",
+      "adr": "ADR-0011",
+      "reason": "See prisma."
+    },
+    {
+      "pattern": "mongodb",
+      "adr": "ADR-0012",
+      "reason": "PostgreSQL is the only datastore. A second datastore splits the transactional boundary that ADR-0004's modular monolith depends on."
+    },
+    {
+      "pattern": "mongoose",
+      "adr": "ADR-0012",
+      "reason": "See mongodb."
+    },
+    {
+      "pattern": "redis",
+      "adr": "ADR-0012",
+      "reason": "PostgreSQL only. Queueing is graphile-worker (ADR-0027) on the same database, so a job and the transaction that created it commit together."
+    },
+    {
+      "pattern": "ioredis",
+      "adr": "ADR-0012",
+      "reason": "See redis."
+    },
+    {
+      "pattern": "@nestjs/platform-express",
+      "adr": "ADR-0005",
+      "reason": "The Fastify adapter is the decision (~45k vs ~28k req/s for a one-line change). Installing the Express platform is how that reverts silently."
+    },
+    {
+      "pattern": "next",
+      "adr": "ADR-0050",
+      "reason": "apps/web is a Vite SPA. ADR-0032 previously budgeted a Next.js standalone server at 512 MB against 2–4 GB of real need, on a box already committing 2 GB to Chromium — the inherited assumption this denylist entry prevents returning. A future customer portal is explicitly NOT covered by this: ADR-0050 scopes itself to apps/web."
+    }
+  ]
+}

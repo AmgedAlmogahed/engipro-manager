@@ -21,7 +21,8 @@
     "check:no-cdn": "node tools/assert-no-cdn.mjs apps/web/dist/index.html",
     "check:glossary": "node tools/check-glossary.mjs",
     "check:tiers": "node tools/check-module-tiers.mjs",
-    "poc:multischema": "node tools/poc/multischema/run.mjs"
+    "poc:multischema": "node tools/poc/multischema/run.mjs",
+    "check:denylist": "node tools/check-dependency-denylist.mjs"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.1.1",

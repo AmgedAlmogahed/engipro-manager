@@ -61,6 +61,12 @@ jobs:
       - name: Module tiers (ADR-0007)
         run: node tools/check-module-tiers.mjs
 
+      # ACTIVATED 2026-08-09 with ADR-0051's denylist. Each denied package would
+      # silently reverse a ratified decision; installing one is a supersession, and
+      # this is what makes it a reviewed decision rather than an install nobody saw.
+      - name: Dependency denylist (ADR-0012, 0051, 0011, 0005, 0050)
+        run: node tools/check-dependency-denylist.mjs
+
       - name: Secret scan (ADR-0035)
         uses: gitleaks/gitleaks-action@v2
         env:

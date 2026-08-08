@@ -102,9 +102,13 @@ Also added inline, for the same reason: [0009](ADR-0009.md) testing strategy, [0
 |---|---|---|
 | [0049](ADR-0049.md) | Multi-role resolution and approval authority limits | **Accepted** — supersedes 0043 |
 | [0050](ADR-0050.md) | Frontend application stack for `apps/web` | **Accepted** |
-| 0051 | Offline sync strategy | **Reserved** — spike in progress |
+| [0051](ADR-0051.md) | Offline sync strategy | **Proposed** — spike complete, awaiting user review |
 
-**0051 is a known gap, deliberately recorded rather than left implicit.** The requirements call for offline support for mobile sales reps and no ADR says how it works. Hand-rolling a mutation queue with replay and conflict resolution on a *quotation* system risks two divergent versions of a price, which is a correctness problem with financial consequences. It should land as `Proposed — BLOCKED` pending a spike that compares a local-first sync engine against hand-rolling, evaluated specifically against RLS (ADR-0022) and `organization_id` scoping (ADR-0017). The number is held so the gap cannot be forgotten.
+**0051's spike is complete and its draft is written.** It is the one ADR deliberately left `Proposed`: it is a vendor and architecture decision promised to the repository owner for review, and it is the only ADR in this set that no agent has ratified.
+
+Its two findings are worth reading even if the conclusion is accepted without argument. **Every replication-based sync engine bypasses RLS** — logical replication is read by a `REPLICATION`-privileged role that RLS does not apply to — so per-user filtering moves into engine-side sync rules, duplicating what `scopeFilter()` already expresses. That is **C1 reborn at the sync layer**: the register's worst defect, reintroduced by infrastructure rather than by code. And **engine write paths bypass the domain** — `authorize()`, the state machines, the same-transaction audit, the outbox — which is the C5 pattern; all three engines concede it by routing writes through your own backend anyway.
+
+The decision takes no engine, and scopes offline by data shape so the conflict problem is dissolved rather than solved: append-only records, own-scoped drafts with server-assigned versions, and **no status transition ever executing offline**. The hand-rolled-queue risk that reserved this number dissolved on its own — `@tanstack/offline-transactions` is now first-party and is the outbox pattern client-side.
 
 ## Ratification order
 
