@@ -39,8 +39,19 @@ module.exports = {
       from: {
         path: '^(apps/api/src/modules/[^/]+/(domain|application)|packages/domain/src)/',
       },
+      // NOT anchored at `^node_modules/`. ADR-0008 wrote it that way, which assumes
+      // npm/yarn flat hoisting and DOES NOT MATCH under pnpm, where a vendor import
+      // resolves to:
+      //
+      //   node_modules/.pnpm/@nestjs+common@11.1.28_.../node_modules/@nestjs/common/index.js
+      //
+      // With the anchor, this rule silently matched nothing in this workspace — the
+      // single rule that makes ADR-0005's "the framework is replaceable" and
+      // ADR-0011's "the ORM is behind ports" true claims. Found by the ADR-0008
+      // live-fire demo, which is precisely the check the ADR mandates and the reason
+      // it mandates it.
       to: {
-        path: '^node_modules/(@nestjs|drizzle-orm|@prisma|@aws-sdk|playwright|axios)/',
+        path: '(^|/)node_modules/(@nestjs|drizzle-orm|@prisma|@aws-sdk|playwright|axios)(/|$)',
       },
     },
 

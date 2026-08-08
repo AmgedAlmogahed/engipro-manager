@@ -128,35 +128,41 @@ import type { Quote } from '../../api/src/modules/quotations/domain/quote';
 export type Shown = Quote;
 EOF
 
-# Rule 2 needs a real node_modules entry to resolve against; a fabricated one would
-# test the fixture rather than the rule.
+# Rule 2 needs a real node_modules entry to resolve against.
 #
-# @nestjs/common is used rather than drizzle-orm because it is installed today and
-# drizzle is not (it arrives with packages/database in W3). The rule forbids both,
-# and @nestjs/* is arguably the stronger case: ADR-0005 claims the HTTP framework is
-# replaceable because domain and application import nothing from it, and this rule is
-# the only thing making that claim true. The drizzle variant asserts additionally,
-# once it is installed.
-mkdir -p node_modules/@nestjs
+# CRITICAL: the fixture mirrors pnpm's ACTUAL layout, not a flat one. An earlier
+# version copied @nestjs/common straight to node_modules/@nestjs/common, which is
+# npm/yarn shaped. That made the rule appear verified while it matched nothing in the
+# real workspace, because pnpm resolves a vendor import to
+#
+#   node_modules/.pnpm/<name>@<version>_<peers>/node_modules/@nestjs/common/index.js
+#
+# The fixture tested the fixture. Both layouts are asserted below so the matcher
+# cannot regress into working for only one of them.
+mkdir -p node_modules/.pnpm/fixture/node_modules/@nestjs node_modules/@nestjs
 NEST_COMMON=""
 for cand in "$ROOT/node_modules/@nestjs/common" "$ROOT/apps/api/node_modules/@nestjs/common"; do
   [ -d "$cand" ] && NEST_COMMON=$cand && break
 done
 if [ -n "$NEST_COMMON" ]; then
-  cp -RL "$NEST_COMMON" node_modules/@nestjs/common 2>/dev/null || cp -R "$NEST_COMMON" node_modules/@nestjs/common
-  cat > packages/domain/src/violates-rule-2.ts <<'EOF'
+  # pnpm-shaped (what this workspace actually produces)
+  cp -RL "$NEST_COMMON" node_modules/.pnpm/fixture/node_modules/@nestjs/common 2>/dev/null \
+    || cp -R "$NEST_COMMON" node_modules/.pnpm/fixture/node_modules/@nestjs/common
+  # Relative to node_modules/@nestjs/, so the target needs to climb one level.
+  ln -s ../.pnpm/fixture/node_modules/@nestjs/common node_modules/@nestjs/common 2>/dev/null || true
+  cat > packages/domain/src/violates-rule-2.ts <<'FIXEOF'
 // Deliberate violation: the HTTP framework inside the domain layer.
 import { Injectable } from '@nestjs/common';
 export const x = Injectable;
-EOF
+FIXEOF
 fi
 if [ -d "$ROOT/node_modules/drizzle-orm" ]; then
   cp -R "$ROOT/node_modules/drizzle-orm" node_modules/drizzle-orm
-  cat > packages/domain/src/violates-rule-2b.ts <<'EOF'
+  cat > packages/domain/src/violates-rule-2b.ts <<'FIXEOF'
 // Deliberate violation: an ORM inside the domain layer.
 import { sql } from 'drizzle-orm';
 export const q = sql;
-EOF
+FIXEOF
 fi
 
 # --- Assertions --------------------------------------------------------------
