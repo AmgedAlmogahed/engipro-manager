@@ -1,0 +1,58 @@
+{
+  "_comment": [
+    "Branch protection for main, as reviewable code. (ADR-0037: 'pipeline definitions in version control')",
+    "",
+    "Apply:  gh api -X POST repos/:owner/:repo/rulesets --input .github/rulesets/main.json",
+    "Update: gh api -X PUT  repos/:owner/:repo/rulesets/<id> --input .github/rulesets/main.json",
+    "",
+    "STAGED, for the same reason CI stages are staged (ADR-0037 rider): a required",
+    "status check cannot reference a check that has never reported. required_status_checks",
+    "below is therefore EMPTY at first application. Each check name joins it after its",
+    "first run on a PR, in lockstep with the pipeline.",
+    "",
+    "The three protections that need no check history are active immediately:",
+    "pull request required, direct pushes blocked, force pushes blocked.",
+    "",
+    "Checks to add as they come online, matching .github/workflows/pr.yml:",
+    "  now          Standalone gates, Workspace checks",
+    "  with eslint  (lint stage inside Workspace checks)",
+    "  with contracts   contract codegen drift, openapi diff",
+    "  with migrations  migration lint",
+    "  with domain      domain purity",
+    "  with tests       unit + use-case, integration",
+    "  with authz       role-matrix suite",
+    "  with machines    state-machine suite",
+    "  with docker      docker build, trivy"
+  ],
+  "name": "main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/main"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": []
+      }
+    },
+    { "type": "deletion" },
+    { "type": "non_fast_forward" }
+  ],
+  "bypass_actors": []
+}

@@ -1,0 +1,44 @@
+# Nightly pipeline.  (ADR-0037)
+#
+# Defined now, inert until its subjects exist. Every job below needs a database,
+# a backup, or a running deployment.
+#
+#     ACTIVATE WITH: the PR that lands the first migration (drift, consistency)
+#                    and the PR that lands WAL-G backups (restore drill).
+
+name: nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  guard:
+    name: Nightly checks not yet enabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain
+        run: |
+          echo "Nightly pipeline defined but inert. Jobs held:"
+          echo "  restore drill      restore the latest backup into a throwaway"
+          echo "                     container, run the integration suite, record"
+          echo "                     duration and outcome (ADR-0031)"
+          echo "  consistency check  cross-context orphaned identifiers (ADR-0013)"
+          echo "                     — no cross-schema FKs exist, so this is the"
+          echo "                     only thing that catches an orphan"
+          echo "  schema drift       live schema matches conventions (ADR-0014)"
+          echo "  audit chain walk   re-walk the ZATCA ICV/PIH chain per EGS unit"
+          echo "                     and alert on a break (ADR-0039)"
+          echo "  dependency audit   pnpm audit"
+          echo ""
+          echo "ADR-0037 requires the restore drill to write a result row whose"
+          echo "ABSENCE raises an alert (ADR-0036). A nightly pipeline that stops"
+          echo "running silently is the failure mode; the missing row is the signal."
+
+  # SKIPPED — subjects do not exist. See the guard job above.
+  # restore-drill:
+  #   steps:
+  #     - name: Restore latest backup into a throwaway container (ADR-0031)
+  #     - name: Run integration suite against the restored database
+  #     - name: Record duration, outcome, and a result row (ADR-0036)

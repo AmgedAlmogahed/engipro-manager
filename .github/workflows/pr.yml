@@ -1,0 +1,159 @@
+# PR pipeline (blocking).  (ADR-0037)
+#
+# Nearly every other ADR names a CI check as its enforcement mechanism. Without
+# this file, those enforcement claims have no implementation.
+#
+# STAGED ACTIVATION. Stages whose subject does not exist yet are declared here as
+# skipped, each citing its ADR. The rule, and it is not negotiable:
+#
+#     THE PR THAT LANDS A SUBJECT ACTIVATES ITS STAGE.
+#
+# No stage may sit green against a nonexistent target. A check that passes because
+# it matched nothing is indistinguishable from a check that passes because the code
+# is correct — that is the silent-hole class that produced C1, and it is the same
+# failure as an ESLint rule scoped to a directory that does not exist.
+
+name: PR
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gates that need no node_modules. These are live and green today.
+  # ---------------------------------------------------------------------------
+  standalone-gates:
+    name: Standalone gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks scans full history; a secret in an old commit still needs rotating
+
+      - name: Agent hook self-test (ADR-0038)
+        run: sh tools/block-prototype-writes.test.sh
+
+      - name: Mining gate (ADR-0003)
+        run: sh tools/check-mining-docs.sh origin/${{ github.base_ref }}
+
+      - name: C-number coverage (ADR-0003)
+        run: sh tools/check-cnumber-coverage.sh
+
+      # Guards against an enforcement clause naming a path that nothing will
+      # create — a gate that reports green forever. Report-only until the last
+      # W7 subject lands, then switch to --strict.
+      - name: Path audit (ADR-0019/0047 near-miss)
+        run: node tools/path-audit.mjs
+
+      - name: Secret scan (ADR-0035)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # SKIPPED — subject does not exist: root CLAUDE.md is not yet committed.
+      # ACTIVATE WITH: the PR that adds CLAUDE.md.  (ADR-0038: 200-line limit)
+      # - name: CLAUDE.md length check (ADR-0038)
+      #   run: |
+      #     lines=$(wc -l < CLAUDE.md)
+      #     [ "$lines" -le 200 ] || { echo "CLAUDE.md is $lines lines, limit is 200"; exit 1; }
+
+  # ---------------------------------------------------------------------------
+  # Gates that need an installed workspace.
+  #
+  # ACTIVE AND EXPECTED TO FAIL until the lockfile exists. It does not, because
+  # ADR-0001 requires pnpm catalogs, which need pnpm >= 9.5. Failing loudly with
+  # a named cause is deliberate: the alternative is a skipped job that looks
+  # green, which is what this pipeline exists to prevent.
+  # ---------------------------------------------------------------------------
+  workspace:
+    name: Workspace checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lockfile prerequisite
+        run: |
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "::error::pnpm-lock.yaml is missing. ADR-0001 requires pnpm catalogs," \
+                 "which need pnpm >= 9.5. Enable corepack or upgrade pnpm, run" \
+                 "'pnpm install', and commit the lockfile. This job is red on purpose" \
+                 "rather than skipped, so the gap is visible."
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Boundary config self-test (ADR-0008, ADR-0037)
+        run: sh tools/dependency-cruiser.test.sh
+
+      - name: Boundaries (ADR-0008)
+        run: pnpm check:boundaries
+
+      - name: Typecheck (ADR-0009)
+        run: pnpm typecheck
+
+      # SKIPPED — subject does not exist: no eslint config yet.
+      # ACTIVATE WITH: the PR that adds the eslint config.
+      # Carries the boundaries mirror, role-literal, money-arithmetic and RTL
+      # directional-utility rules.  (ADR-0008, ADR-0021, ADR-0016, ADR-0019)
+      # - name: Lint
+      #   run: pnpm lint
+
+      # SKIPPED — subject does not exist: no OpenAPI contract or generated client.
+      # ACTIVATE WITH: the PR that adds packages/contracts.  (ADR-0010)
+      # - name: Contract codegen drift
+      #   run: pnpm codegen && git diff --exit-code
+      # - name: OpenAPI breaking-change diff vs main
+      #   run: pnpm openapi:diff
+
+      # SKIPPED — subject does not exist: no migrations.
+      # ACTIVATE WITH: the first migration.  (ADR-0014, ADR-0013, ADR-0016, ADR-0022)
+      # Checks base columns, money types, cross-schema FKs, RLS policy, sequences,
+      # naive timestamps, and the ADR-0042 retention monotonicity assertion.
+      # - name: Migration lint
+      #   run: pnpm lint:migrations
+
+      # SKIPPED — subject does not exist: packages/domain is empty.
+      # ACTIVATE WITH: the PR that adds packages/domain.  (ADR-0006, ADR-0007)
+      # - name: Domain purity
+      #   run: pnpm typecheck:domain-isolated
+
+      # SKIPPED — subject does not exist: no test suites.
+      # ACTIVATE WITH: the PR that adds the first test.  (ADR-0009)
+      # - name: Unit + use-case tests
+      #   run: pnpm test:unit
+      # - name: Integration tests (real PostgreSQL)
+      #   run: pnpm test:integration
+
+      # SKIPPED — subject does not exist: no permission model implemented.
+      # ACTIVATE WITH: the PR that implements the resolver.  (ADR-0021, ADR-0049, ADR-0044)
+      # Every (role x endpoint x scope), IDOR probes, approval-authority limits,
+      # and the ADR-0049 monotonicity property test.
+      # - name: Role-matrix suite
+      #   run: pnpm test:roles
+
+      # SKIPPED — subject does not exist: no state machines implemented.
+      # ACTIVATE WITH: the PR that adds the first transition() call.  (ADR-0029)
+      # - name: State-machine suite
+      #   run: pnpm test:transitions
+
+      # SKIPPED — subject does not exist: no Dockerfiles.
+      # ACTIVATE WITH: the PR that adds infra/docker.  (ADR-0032)
+      # Note: arm64, and the built index.html must contain no CDN <script src="http…>
+      # and no importmap (ADR-0050).
+      # - name: Docker build (linux/arm64, no push)
+      #   run: docker buildx build --platform linux/arm64 -f infra/docker/Dockerfile.api .
+      # - name: Trivy scan
+      #   uses: aquasecurity/trivy-action@master

@@ -1,0 +1,57 @@
+# main pipeline.  (ADR-0037)
+#
+# Lands as a file now so it is reviewed as code, per ADR-0037's own enforcement
+# clause. Every deploy step is DISABLED because there is nothing to deploy: no
+# Dockerfiles, no images, no server target wired.
+#
+#     ACTIVATE WITH: the PR that lands infra/docker (ADR-0032).
+#
+# It is deliberately not a skeleton that "works" against nothing. A deploy job
+# that succeeds by doing nothing is worse than no deploy job, because the green
+# check is then evidence of a deployment that never happened — which is the same
+# class of failure as the predecessor's first production PDF request, where a
+# health check confirmed the process was alive and nothing confirmed it worked.
+
+name: main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  guard:
+    name: Deployment not yet enabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain
+        run: |
+          echo "The main pipeline is defined but inert. Deployment activates with"
+          echo "infra/docker (ADR-0032). Steps held below, in order:"
+          echo "  1. all PR checks"
+          echo "  2. docker buildx build --platform linux/arm64 --push"
+          echo "  3. deploy: docker compose pull && up -d"
+          echo "  4. health-check loop: wait for /ready on every service"
+          echo "  5. post-deploy smoke: authenticate, issue one quotation PDF,"
+          echo "     assert a valid PDF, assert a valid ZATCA TLV QR (ADR-0039)"
+          echo "  6. rollback to the previous image tag on any failure"
+          echo ""
+          echo "Step 5 is the control whose absence produced the predecessor's"
+          echo "first-request PDF failure. It is not optional at activation."
+
+  # SKIPPED — subject does not exist. See the guard job above.
+  # deploy:
+  #   needs: [guard]
+  #   runs-on: ubuntu-latest        # native ARM runner where available (ADR-0032)
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Build and push arm64 images
+  #       run: docker buildx build --platform linux/arm64 --push -f infra/docker/Dockerfile.api .
+  #     - name: Deploy
+  #       run: docker compose -f infra/docker/docker-compose.prod.yml pull && docker compose -f infra/docker/docker-compose.prod.yml up -d
+  #     - name: Wait for healthy
+  #       run: sh tools/wait-for-ready.sh
+  #     - name: Post-deploy smoke (ADR-0032, ADR-0039)
+  #       run: sh tools/smoke-quotation-pdf.sh
+  #     - name: Rollback on failure
+  #       if: failure()
+  #       run: sh tools/rollback-previous-tag.sh
