@@ -1,0 +1,58 @@
+# Development services only. (ADR-0032)
+#
+# ADR-0032 lists postgres, minio and mailhog for dev. Only postgres is here: minio
+# arrives with object storage (ADR-0034) and mailhog with notifications (ADR-0028), on
+# the same staged-activation rule the CI pipeline uses. A service defined before its
+# consumer is a service nobody notices is broken.
+#
+# This is the DEV slice. docker-compose.prod.yml is a separate file with different
+# concerns (memory limits, restart policies, Caddy, the PDF worker) and lands with the
+# Dockerfiles.
+#
+#   docker compose -f infra/docker/docker-compose.dev.yml up -d
+#   docker compose -f infra/docker/docker-compose.dev.yml down          # keeps data
+#   docker compose -f infra/docker/docker-compose.dev.yml down -v       # drops data
+#
+# Then, from apps/api:
+#   DATABASE_URL=postgres://engipro:engipro@localhost:5434/engipro_dev pnpm test:integration
+#
+# Override the host port with ENGIPRO_PG_PORT if 5434 is taken on your machine.
+
+name: engipro-dev
+
+services:
+  postgres:
+    image: postgres:16
+    # Pinned to the same major CI uses. A dev/CI major mismatch means a migration can
+    # pass locally and fail in the pipeline, or worse, the reverse.
+    environment:
+      POSTGRES_USER: engipro
+      POSTGRES_PASSWORD: engipro
+      POSTGRES_DB: engipro_dev
+      # Deterministic collation, so ORDER BY on Arabic text is reproducible across
+      # machines. Locale-dependent sort order is a real source of "works on my machine"
+      # differences in a bilingual system (ADR-0019).
+      LANG: C.UTF-8
+    ports:
+      # Not 5432: a developer with a system PostgreSQL already listening there would
+      # otherwise connect to it silently and wonder why migrations do nothing.
+      #
+      # Overridable because the host port is the ONE setting that is genuinely
+      # machine-specific. 5433 was already taken on the first machine this ran on, by an
+      # unrelated project's container — a hardcoded port makes that a file edit, and a
+      # file edit to run the dev stack is a file someone eventually commits by accident.
+      - '${ENGIPRO_PG_PORT:-5434}:5432'
+    volumes:
+      - engipro_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Without this, `up -d` returns before the server accepts connections and the
+      # first command races startup — which reads as a flaky test rather than a race.
+      test: ['CMD-SHELL', 'pg_isready -U engipro -d engipro_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Local dev only: never exposed beyond the machine, and the credentials above are
+    # deliberately trivial because they must never be reused anywhere real (ADR-0035).
+
+volumes:
+  engipro_pgdata:

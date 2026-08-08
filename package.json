@@ -24,7 +24,11 @@
     "poc:multischema": "node tools/poc/multischema/run.mjs",
     "check:denylist": "node tools/check-dependency-denylist.mjs",
     "check:migrations": "node tools/check-migrations.mjs packages/database/migrations",
-    "check:migrations:self-test": "node tools/migration-lint.test.mjs"
+    "check:migrations:self-test": "node tools/migration-lint.test.mjs",
+    "db:up": "docker compose -f infra/docker/docker-compose.dev.yml up -d --wait",
+    "db:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
+    "db:reset": "docker compose -f infra/docker/docker-compose.dev.yml down -v && docker compose -f infra/docker/docker-compose.dev.yml up -d --wait",
+    "test:integration": "DATABASE_URL=postgres://engipro:engipro@localhost:${ENGIPRO_PG_PORT:-5434}/engipro_dev pnpm --filter @engipro/api test:integration"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.1.1",
