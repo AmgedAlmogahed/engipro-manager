@@ -128,12 +128,31 @@ import type { Quote } from '../../api/src/modules/quotations/domain/quote';
 export type Shown = Quote;
 EOF
 
-# Rule 2 needs a real node_modules entry to resolve against. Only assert it when
-# one is present; a fabricated node_modules would test the fixture, not the rule.
-if [ -d "$ROOT/node_modules/drizzle-orm" ]; then
-  mkdir -p node_modules
-  cp -R "$ROOT/node_modules/drizzle-orm" node_modules/drizzle-orm
+# Rule 2 needs a real node_modules entry to resolve against; a fabricated one would
+# test the fixture rather than the rule.
+#
+# @nestjs/common is used rather than drizzle-orm because it is installed today and
+# drizzle is not (it arrives with packages/database in W3). The rule forbids both,
+# and @nestjs/* is arguably the stronger case: ADR-0005 claims the HTTP framework is
+# replaceable because domain and application import nothing from it, and this rule is
+# the only thing making that claim true. The drizzle variant asserts additionally,
+# once it is installed.
+mkdir -p node_modules/@nestjs
+NEST_COMMON=""
+for cand in "$ROOT/node_modules/@nestjs/common" "$ROOT/apps/api/node_modules/@nestjs/common"; do
+  [ -d "$cand" ] && NEST_COMMON=$cand && break
+done
+if [ -n "$NEST_COMMON" ]; then
+  cp -RL "$NEST_COMMON" node_modules/@nestjs/common 2>/dev/null || cp -R "$NEST_COMMON" node_modules/@nestjs/common
   cat > packages/domain/src/violates-rule-2.ts <<'EOF'
+// Deliberate violation: the HTTP framework inside the domain layer.
+import { Injectable } from '@nestjs/common';
+export const x = Injectable;
+EOF
+fi
+if [ -d "$ROOT/node_modules/drizzle-orm" ]; then
+  cp -R "$ROOT/node_modules/drizzle-orm" node_modules/drizzle-orm
+  cat > packages/domain/src/violates-rule-2b.ts <<'EOF'
 // Deliberate violation: an ORM inside the domain layer.
 import { sql } from 'drizzle-orm';
 export const q = sql;
@@ -146,15 +165,22 @@ expect_violation 'module reaches into another module'    'no-cross-module-intern
 expect_violation 'app imports another app'               'no-app-to-app'
 
 if [ -f packages/domain/src/violates-rule-2.ts ]; then
-  expect_violation 'ORM imported into the domain layer'  'no-vendor-in-domain-or-application'
+  expect_violation 'framework imported into domain layer' 'no-vendor-in-domain-or-application'
 else
-  printf 'SKIP  no-vendor-in-domain-or-application — drizzle-orm not installed yet.\n'
+  printf 'FAIL  no-vendor-in-domain-or-application could not be tested: @nestjs/common absent.\n'
+  fail=$((fail + 1))
+fi
+if [ -f packages/domain/src/violates-rule-2b.ts ]; then
+  expect_violation 'ORM imported into domain layer'      'no-vendor-in-domain-or-application'
+else
+  printf 'note  drizzle-orm variant of rule 2 not asserted; drizzle arrives in W3.\n'
 fi
 
 # --- The clean case must be clean -------------------------------------------
 # A config that flags everything is as useless as one that flags nothing.
 rm -f packages/domain/src/violates-rule-1.ts \
       packages/domain/src/violates-rule-2.ts \
+      packages/domain/src/violates-rule-2b.ts \
       apps/api/src/modules/clients/domain/violates-rule-3.ts \
       apps/web/src/violates-rule-4.ts
 
@@ -179,8 +205,12 @@ fi
 # a bad glob, a moved directory, a renamed app.
 cd "$ROOT"
 if [ -d apps/api/src ] || [ -n "$(find packages -mindepth 2 -name src -type d 2>/dev/null)" ]; then
-  cruised=$("$DEPCRUISE" apps packages --config "$CONFIG" --output-type text 2>&1 \
-    | grep -oE '\([0-9]+ modules' | grep -oE '[0-9]+' | head -1)
+  # Parse the JSON summary, not the human text output. The text reporter only
+  # prints "(N modules, N dependencies cruised)" in its no-violations-found
+  # phrasing, so scraping it reported 0 whenever modules actually existed — a
+  # false alarm in the guard written to catch false greens.
+  cruised=$("$DEPCRUISE" apps packages --config "$CONFIG" --output-type json 2>/dev/null \
+    | node -e 'let r="";process.stdin.on("data",d=>r+=d).on("end",()=>{try{console.log(JSON.parse(r).summary.totalCruised||0)}catch{console.log(0)}})')
   cruised=${cruised:-0}
   if [ "$cruised" -gt 0 ]; then
     pass=$((pass + 1))

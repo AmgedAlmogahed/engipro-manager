@@ -81,10 +81,9 @@ jobs:
   # ---------------------------------------------------------------------------
   # Gates that need an installed workspace.
   #
-  # ACTIVE AND EXPECTED TO FAIL until the lockfile exists. It does not, because
-  # ADR-0001 requires pnpm catalogs, which need pnpm >= 9.5. Failing loudly with
-  # a named cause is deliberate: the alternative is a skipped job that looks
-  # green, which is what this pipeline exists to prevent.
+  # The lockfile-prerequisite step below is retained now that the lockfile exists:
+  # it names the cause if the lockfile is ever removed or a pnpm without catalog
+  # support is used, rather than failing several steps later with an unrelated error.
   # ---------------------------------------------------------------------------
   workspace:
     name: Workspace checks
@@ -141,10 +140,17 @@ jobs:
       # - name: Migration lint
       #   run: pnpm lint:migrations
 
-      # SKIPPED — subject does not exist: packages/domain is empty.
-      # ACTIVATE WITH: the PR that adds packages/domain.  (ADR-0006, ADR-0007)
-      # - name: Domain purity
-      #   run: pnpm typecheck:domain-isolated
+      # ACTIVATED 2026-08-08 by the PR that scaffolded packages/domain.
+      - name: Domain purity (ADR-0006, ADR-0005)
+        run: sh tools/check-domain-purity.sh
+
+      - name: API adapter smoke test (ADR-0005, ADR-0010)
+        run: pnpm --filter @engipro/api test:adapter
+
+      - name: Web build is self-contained (ADR-0050, ADR-0032)
+        run: |
+          pnpm --filter @engipro/web build
+          node tools/assert-no-cdn.mjs apps/web/dist/index.html
 
       # SKIPPED — subject does not exist: no test suites.
       # ACTIVATE WITH: the PR that adds the first test.  (ADR-0009)

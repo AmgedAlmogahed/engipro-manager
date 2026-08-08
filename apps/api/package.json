@@ -1,0 +1,26 @@
+{
+  "name": "@engipro/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "typecheck": "tsc --noEmit",
+    "test:adapter": "tsx --test src/**/*.smoke.test.ts"
+  },
+  "dependencies": {
+    "@fastify/static": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/platform-fastify": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "reflect-metadata": "catalog:"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsx": "catalog:"
+  },
+  "type": "module"
+}

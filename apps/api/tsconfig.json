@@ -1,0 +1,18 @@
+{
+  "//": "experimentalDecorators and emitDecoratorMetadata are still required by NestJS; its TC39 decorator migration is incomplete (ADR-0005). These are legal HERE and nowhere in packages/domain.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
+}

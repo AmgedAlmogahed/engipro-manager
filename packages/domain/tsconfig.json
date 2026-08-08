@@ -1,0 +1,18 @@
+{
+  "//": "Deliberately minimal. ADR-0006 requires this package to typecheck with ONLY TypeScript present, so it must not depend on ambient types from any other package. No `types` entry, no DOM lib, no decorator support — a decorator here fails to compile, which is ADR-0005's enforcement.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*.ts"]
+}

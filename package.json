@@ -16,7 +16,9 @@
     "check:boundaries:self-test": "sh tools/dependency-cruiser.test.sh",
     "check:mining": "sh tools/check-mining-docs.sh",
     "check:cnumbers": "sh tools/check-cnumber-coverage.sh",
-    "check:paths": "node tools/path-audit.mjs"
+    "check:paths": "node tools/path-audit.mjs",
+    "check:purity": "sh tools/check-domain-purity.sh",
+    "check:no-cdn": "node tools/assert-no-cdn.mjs apps/web/dist/index.html"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.1.1",

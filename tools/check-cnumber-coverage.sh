@@ -32,10 +32,35 @@ checked=0
 
 for doc in $docs; do
   # Every C-number on a line that also says "prevented".
-  claims=$(grep -oiE 'C[0-9]{1,2}[^\n]*prevented|prevented[^\n]*C[0-9]{1,2}' "$doc" 2>/dev/null \
+  #
+  # NOTE: `.*` not `[^\n]*`. POSIX grep does not interpret \n inside a bracket
+  # expression — `[^\n]` means "not a backslash and not the letter n", so any
+  # quoted defect text containing an 'n' failed to match and this gate reported
+  # "no prevented claims found" against a document making six of them. It only
+  # appeared to work interactively because this shell shims grep to ugrep, which
+  # reads `[^\n]` the PCRE way. grep is line-oriented, so `.` already excludes
+  # newlines.
+  claims=$(grep -oiE 'C[0-9]{1,2}.*prevented|prevented.*C[0-9]{1,2}' "$doc" 2>/dev/null \
     | grep -oiE 'C[0-9]{1,2}' \
     | tr 'a-z' 'A-Z' \
     | sort -u || true)
+
+  # A mining document is written BEFORE the module's domain code — that is the whole
+  # protocol (ADR-0003 clause 1). So a "Prevented" claim only becomes load-bearing
+  # once the module exists; enforcing it earlier would make a correct, complete
+  # mining document impossible to commit.
+  #
+  # The claim is not forgotten in the meantime: it is listed as PENDING below, and
+  # the moment apps/api/src/modules/<module>/ appears, this gate starts failing until
+  # the tests land. That is the same staged-activation rule the CI pipeline uses.
+  module=$(basename "$doc" .md)
+  if ! [ -d "apps/api/src/modules/$module" ]; then
+    if [ -n "$claims" ]; then
+      printf 'PENDING  %-14s claims %s — enforced when apps/api/src/modules/%s/ lands\n' \
+        "$(basename "$doc")" "$(printf '%s' "$claims" | tr '\n' ' ')" "$module"
+    fi
+    continue
+  fi
 
   for c in $claims; do
     checked=$((checked + 1))
@@ -57,8 +82,9 @@ for doc in $docs; do
 done
 
 if [ "$checked" = 0 ]; then
-  printf 'check-cnumber-coverage: no "prevented" claims found in %s document(s). OK.\n' \
+  printf 'check-cnumber-coverage: no enforceable claims yet across %s document(s). OK.\n' \
     "$(printf '%s\n' $docs | wc -l | tr -d ' ')"
+  printf '  Any PENDING lines above are claims awaiting their module; they are not passing.\n'
   exit 0
 fi
 
