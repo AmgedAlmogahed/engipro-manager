@@ -22,7 +22,9 @@
     "check:glossary": "node tools/check-glossary.mjs",
     "check:tiers": "node tools/check-module-tiers.mjs",
     "poc:multischema": "node tools/poc/multischema/run.mjs",
-    "check:denylist": "node tools/check-dependency-denylist.mjs"
+    "check:denylist": "node tools/check-dependency-denylist.mjs",
+    "check:migrations": "node tools/check-migrations.mjs packages/database/migrations",
+    "check:migrations:self-test": "node tools/migration-lint.test.mjs"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.1.1",
