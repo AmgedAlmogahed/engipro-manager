@@ -1,4 +1,9 @@
-import { Project, AuthorityApplication, User, Client, ActivityLog, ProjectDocument, Employee, DepartmentDetails, Role, PermissionDefinition, RoleAuditLog } from './types';
+import {
+  Project, AuthorityApplication, User, Client, ActivityLog, ProjectDocument, Employee,
+  DepartmentDetails, Role, PermissionDefinition, RoleAuditLog,
+  ClientChannel, ClientStatus, ServiceType, Department, Opportunity,
+  Rfq, RfqRejectType, Quotation, Installment
+} from './types';
 
 export const CURRENT_USER: User = {
   id: 'u1',
@@ -7,18 +12,22 @@ export const CURRENT_USER: User = {
   avatar: 'https://picsum.photos/100/100'
 };
 
-export const MOCK_CLIENTS: Client[] = [
-  { id: 'c1', name: 'Skyline Developers', type: 'Company', contact: 'John Doe', email: 'john@skyline.com' },
-  { id: 'c2', name: 'Sarah Connor', type: 'Individual', contact: 'Sarah Connor', email: 'sarah@gmail.com' },
-];
-
 export const MOCK_USERS: User[] = [
   CURRENT_USER,
   { id: 'u2', name: 'Jane Architect', role: 'Lead Architect', avatar: 'https://picsum.photos/101/101' },
   { id: 'u3', name: 'Bob Builder', role: 'Civil Engineer', avatar: 'https://picsum.photos/102/102' },
   { id: 'u4', name: 'Ahmed Surveyor', role: 'Head of Surveying', avatar: 'https://picsum.photos/103/103' },
   { id: 'u5', name: 'Layla Safety', role: 'Safety Officer', avatar: 'https://picsum.photos/104/104' },
+  { id: 'u7', name: 'Khalid Sales', role: 'Sales Manager', avatar: 'https://picsum.photos/106/106' },
+  { id: 'u8', name: 'Noura Rep', role: 'Sales Representative', avatar: 'https://picsum.photos/107/107' },
+  { id: 'u9', name: 'Sami Finance', role: 'CFO', avatar: 'https://picsum.photos/108/108' },
+  { id: 'u10', name: 'Omar Director', role: 'General Manager', avatar: 'https://picsum.photos/109/109' },
 ];
+
+export const SALES_MANAGER = MOCK_USERS[5];
+export const SALES_REP = MOCK_USERS[6];
+export const CFO = MOCK_USERS[7];
+export const GENERAL_MANAGER = MOCK_USERS[8];
 
 export const MOCK_EMPLOYEES: Employee[] = [
   { ...CURRENT_USER, email: 'alex@engipro.com', department: 'Modern', activeProjects: 5, openTasks: 12, status: 'Active', joinDate: '2020-01-15', utilization: 85 },
@@ -36,6 +45,731 @@ export const MOCK_DEPARTMENTS: DepartmentDetails[] = [
   { id: 'd4', name: 'Surveying', description: 'Land surveying and mapping.', headOfDepartment: MOCK_USERS[3], employeeCount: 5, activeProjectCount: 6 },
   { id: 'd5', name: 'Modern', description: 'Modern building techniques.', headOfDepartment: CURRENT_USER, employeeCount: 3, activeProjectCount: 4 },
   { id: 'd6', name: 'Khitbrah', description: 'Specialized consulting.', headOfDepartment: MOCK_USERS[0], employeeCount: 2, activeProjectCount: 2 },
+];
+
+// ============================================================
+// Module B1 / B2 — catalogs (module 12 will make these editable)
+// ============================================================
+
+export const CLIENT_CHANNELS: ClientChannel[] = [
+  'Walk-in', 'Referral', 'Website', 'Social Media', 'Google Maps', 'Government Tender', 'AI Chatbot'
+];
+
+export const CLIENT_STATUSES: ClientStatus[] = [
+  'New Lead', 'Contacted', 'Qualified', 'Client', 'Dormant', 'Disqualified'
+];
+
+/** The happy path of B1. Disqualified is terminal and reachable from any open status. */
+export const CLIENT_STATUS_FLOW: ClientStatus[] = ['New Lead', 'Contacted', 'Qualified', 'Client'];
+
+export const DISQUALIFY_REASONS = [
+  'Budget below minimum',
+  'Service not offered',
+  'Outside coverage area',
+  'Duplicate record',
+  'No response after repeated contact',
+  'Client withdrew',
+  'Other',
+];
+
+export const SERVICE_CATALOG: ServiceType[] = [
+  'Architectural Design', 'Structural Engineering', 'MEP Design',
+  'Safety Consultation', 'Site Supervision', 'Surveying', 'Permit Management'
+];
+
+/** Which department owns which service — drives the B2 assignment route. */
+export const SERVICE_DEPARTMENT: Record<ServiceType, Department> = {
+  'Architectural Design': 'Architecture',
+  'Structural Engineering': 'Civil',
+  'MEP Design': 'Modern',
+  'Safety Consultation': 'Safety',
+  'Site Supervision': 'Civil',
+  'Surveying': 'Surveying',
+  'Permit Management': 'Khitbrah',
+};
+
+export const SAUDI_REGIONS = [
+  'Riyadh', 'Makkah', 'Madinah', 'Qassim', 'Eastern Province', 'Asir', 'Tabuk',
+  'Hail', 'Northern Borders', 'Jazan', 'Najran', 'Al-Baha', 'Al-Jouf'
+];
+
+export const QUOTE_REQUEST_CHECKLIST = [
+  'Signed quote request',
+  'Title deed / land document',
+  'Site coordinates or plot number',
+  'Existing drawings (if any)',
+  'Commercial registration (companies)',
+  'Authorization letter',
+];
+
+// ============================================================
+// Module B1 — client records (leads and clients share one table)
+// ============================================================
+
+export const MOCK_CLIENTS: Client[] = [
+  {
+    id: 'CLIENT-2026-0001',
+    name: 'Skyline Developers',
+    type: 'Company',
+    contact: 'John Doe',
+    email: 'john@skyline.com',
+    phone: '0551234567',
+    companyName: 'Skyline Developers',
+    status: 'Client',
+    channel: 'Referral',
+    priority: 'High',
+    isVip: true,
+    owner: MOCK_USERS[6],
+    createdAt: '2024-09-12',
+    convertedAt: '2024-10-01',
+    lastInteractionAt: '2026-07-28',
+    lifetimeValue: 2450000,
+    city: 'Riyadh',
+    district: 'Al Olaya',
+    region: 'Riyadh',
+    interestedServices: ['Architectural Design', 'Structural Engineering', 'Site Supervision'],
+    commercialRegistration: '1010234567',
+    taxId: '300123456700003',
+    referredBy: 'Mansour Trading',
+    referrerPhone: '0509988776',
+    statusHistory: [
+      { id: 'sh1', to: 'New Lead', date: '2024-09-12', user: MOCK_USERS[6] },
+      { id: 'sh2', from: 'New Lead', to: 'Contacted', date: '2024-09-13', user: MOCK_USERS[6] },
+      { id: 'sh3', from: 'Contacted', to: 'Qualified', date: '2024-09-20', user: MOCK_USERS[5] },
+      { id: 'sh4', from: 'Qualified', to: 'Client', date: '2024-10-01', user: MOCK_USERS[5] },
+    ],
+    interactions: [
+      { id: 'in1', clientId: 'CLIENT-2026-0001', type: 'Meeting', direction: 'Outbound', subject: 'Phase 2 kickoff discussion', summary: 'Walked through the villa complex extension. Client wants a quote for the second plot.', occurredAt: '2026-07-28T10:00:00', user: MOCK_USERS[6], outcome: 'Requested a price offer', nextAction: 'Open opportunity', followUpDate: '2026-08-04' },
+      { id: 'in2', clientId: 'CLIENT-2026-0001', type: 'Call', direction: 'Inbound', subject: 'Progress check on Sunset Villa', occurredAt: '2026-06-14T09:20:00', user: MOCK_USERS[0] },
+    ],
+    documents: [
+      { id: 'cd1', name: 'CR_Skyline.pdf', category: 'Commercial registration', fileType: 'pdf', size: '820 KB', uploadedBy: MOCK_USERS[6], uploadDate: '2024-09-20' },
+      { id: 'cd2', name: 'Plot_Deed_412.pdf', category: 'Title deed', fileType: 'pdf', size: '1.4 MB', uploadedBy: MOCK_USERS[6], uploadDate: '2026-07-29' },
+    ],
+  },
+  {
+    id: 'CLIENT-2026-0002',
+    name: 'Sarah Connor',
+    type: 'Individual',
+    contact: 'Sarah Connor',
+    email: 'sarah@gmail.com',
+    phone: '0567778899',
+    status: 'Client',
+    channel: 'Website',
+    priority: 'Medium',
+    owner: MOCK_USERS[6],
+    createdAt: '2025-02-03',
+    convertedAt: '2025-02-25',
+    lastInteractionAt: '2026-05-11',
+    lifetimeValue: 380000,
+    city: 'Jeddah',
+    region: 'Makkah',
+    interestedServices: ['Architectural Design'],
+    statusHistory: [
+      { id: 'sh5', to: 'New Lead', date: '2025-02-03', user: MOCK_USERS[6] },
+      { id: 'sh6', from: 'New Lead', to: 'Contacted', date: '2025-02-05', user: MOCK_USERS[6] },
+      { id: 'sh7', from: 'Contacted', to: 'Qualified', date: '2025-02-18', user: MOCK_USERS[6] },
+      { id: 'sh8', from: 'Qualified', to: 'Client', date: '2025-02-25', user: MOCK_USERS[5] },
+    ],
+    interactions: [
+      { id: 'in3', clientId: 'CLIENT-2026-0002', type: 'Email', direction: 'Outbound', subject: 'Final drawings delivered', occurredAt: '2026-05-11T13:00:00', user: MOCK_USERS[1] },
+    ],
+    documents: [],
+  },
+  {
+    id: 'CLIENT-2026-0003',
+    name: 'Al Nakheel Contracting',
+    type: 'Company',
+    contact: 'Faisal Al Otaibi',
+    email: 'faisal@nakheel-co.sa',
+    phone: '0533221100',
+    companyName: 'Al Nakheel Contracting',
+    status: 'New Lead',
+    channel: 'Google Maps',
+    priority: 'Urgent',
+    owner: MOCK_USERS[6],
+    createdAt: '2026-08-01',
+    lifetimeValue: 0,
+    slaStatus: 'Due Soon',
+    slaDueAt: '2026-08-02T17:00:00',
+    city: 'Dammam',
+    region: 'Eastern Province',
+    interestedServices: ['Site Supervision', 'Safety Consultation'],
+    estimatedBudget: 600000,
+    mapsLink: 'https://maps.google.com/?cid=884412',
+    statusHistory: [
+      { id: 'sh9', to: 'New Lead', date: '2026-08-01', user: MOCK_USERS[6] },
+    ],
+    interactions: [],
+    documents: [],
+  },
+  {
+    id: 'CLIENT-2026-0004',
+    name: 'Reem Al Harbi',
+    type: 'Individual',
+    contact: 'Reem Al Harbi',
+    email: 'reem.h@outlook.com',
+    phone: '0544001122',
+    status: 'Contacted',
+    channel: 'Social Media',
+    priority: 'Medium',
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-26',
+    lastInteractionAt: '2026-07-27',
+    lifetimeValue: 0,
+    slaStatus: 'On Time',
+    slaDueAt: '2026-08-06T12:00:00',
+    firstResponseAt: '2026-07-27T09:40:00',
+    city: 'Riyadh',
+    district: 'Al Narjis',
+    region: 'Riyadh',
+    interestedServices: ['Architectural Design', 'Permit Management'],
+    estimatedBudget: 180000,
+    socialPlatform: 'Instagram',
+    socialProfile: '@reem.builds',
+    statusHistory: [
+      { id: 'sh10', to: 'New Lead', date: '2026-07-26', user: MOCK_USERS[6] },
+      { id: 'sh11', from: 'New Lead', to: 'Contacted', date: '2026-07-27', user: MOCK_USERS[6] },
+    ],
+    interactions: [
+      { id: 'in4', clientId: 'CLIENT-2026-0004', type: 'WhatsApp', direction: 'Outbound', subject: 'First contact', summary: 'Sent the service list and asked for the plot size.', occurredAt: '2026-07-27T09:40:00', user: MOCK_USERS[6], nextAction: 'Collect deed copy', followUpDate: '2026-08-03' },
+    ],
+    documents: [],
+  },
+  {
+    id: 'CLIENT-2026-0005',
+    name: 'Ministry of Housing — Tender 4471',
+    type: 'Company',
+    contact: 'Procurement Desk',
+    email: 'tenders@housing.gov.sa',
+    phone: '0112223344',
+    companyName: 'Ministry of Housing',
+    status: 'Qualified',
+    channel: 'Government Tender',
+    priority: 'High',
+    owner: MOCK_USERS[5],
+    createdAt: '2026-07-20',
+    lastInteractionAt: '2026-07-30',
+    lifetimeValue: 0,
+    slaStatus: 'On Time',
+    city: 'Riyadh',
+    region: 'Riyadh',
+    interestedServices: ['Architectural Design', 'Structural Engineering', 'MEP Design'],
+    estimatedBudget: 4200000,
+    tenderPlatform: 'Etimad',
+    tenderNumber: 'ETD-2026-4471',
+    tenderDeadline: '2026-08-20',
+    statusHistory: [
+      { id: 'sh12', to: 'New Lead', date: '2026-07-20', user: MOCK_USERS[5] },
+      { id: 'sh13', from: 'New Lead', to: 'Contacted', date: '2026-07-22', user: MOCK_USERS[5] },
+      { id: 'sh14', from: 'Contacted', to: 'Qualified', date: '2026-07-30', user: MOCK_USERS[5], reason: 'Technical review cleared — we can bid' },
+    ],
+    interactions: [
+      { id: 'in5', clientId: 'CLIENT-2026-0005', type: 'Note', direction: 'Inbound', subject: 'Tender booklet reviewed', summary: 'Scope covers three districts. Technical head approved participation.', occurredAt: '2026-07-30T15:00:00', user: MOCK_USERS[1] },
+    ],
+    documents: [
+      { id: 'cd3', name: 'Tender_Booklet_4471.pdf', category: 'Tender documents', fileType: 'pdf', size: '6.2 MB', uploadedBy: MOCK_USERS[5], uploadDate: '2026-07-21', required: true },
+    ],
+  },
+  {
+    id: 'CLIENT-2026-0006',
+    name: 'Bilal Motors',
+    type: 'Company',
+    contact: 'Bilal Ahmed',
+    email: 'bilal@bilalmotors.sa',
+    phone: '0501119988',
+    companyName: 'Bilal Motors',
+    status: 'Dormant',
+    channel: 'Walk-in',
+    priority: 'Low',
+    owner: MOCK_USERS[6],
+    createdAt: '2024-04-18',
+    convertedAt: '2024-05-06',
+    lastInteractionAt: '2025-09-15',
+    lifetimeValue: 145000,
+    city: 'Riyadh',
+    region: 'Riyadh',
+    interestedServices: ['Safety Consultation'],
+    notes: 'No activity for 10 months — candidate for a reactivation campaign.',
+    statusHistory: [
+      { id: 'sh15', to: 'New Lead', date: '2024-04-18', user: MOCK_USERS[6] },
+      { id: 'sh16', from: 'New Lead', to: 'Client', date: '2024-05-06', user: MOCK_USERS[5] },
+      { id: 'sh17', from: 'Client', to: 'Dormant', date: '2026-07-15', user: CURRENT_USER, reason: 'No activity for 10 months' },
+    ],
+    interactions: [],
+    documents: [],
+  },
+  {
+    id: 'CLIENT-2026-0007',
+    name: 'Tariq Enterprises',
+    type: 'Company',
+    contact: 'Tariq Salem',
+    email: 'tariq@tariq-ent.com',
+    phone: '0555550001',
+    companyName: 'Tariq Enterprises',
+    status: 'Disqualified',
+    channel: 'AI Chatbot',
+    priority: 'Low',
+    owner: MOCK_USERS[6],
+    createdAt: '2026-06-02',
+    lastInteractionAt: '2026-06-10',
+    lifetimeValue: 0,
+    disqualifyReason: 'Outside coverage area',
+    city: 'Sakaka',
+    region: 'Al-Jouf',
+    statusHistory: [
+      { id: 'sh18', to: 'New Lead', date: '2026-06-02', user: MOCK_USERS[6] },
+      { id: 'sh19', from: 'New Lead', to: 'Contacted', date: '2026-06-04', user: MOCK_USERS[6] },
+      { id: 'sh20', from: 'Contacted', to: 'Disqualified', date: '2026-06-10', user: MOCK_USERS[5], reason: 'Outside coverage area — no team in Al-Jouf' },
+    ],
+    interactions: [],
+    documents: [],
+  },
+  {
+    id: 'CLIENT-2026-0008',
+    name: 'Green Oasis Resorts',
+    type: 'Company',
+    contact: 'Hanan Yousef',
+    email: 'hanan@greenoasis.sa',
+    phone: '0566004411',
+    companyName: 'Green Oasis Resorts',
+    status: 'New Lead',
+    channel: 'Website',
+    priority: 'High',
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-31',
+    lifetimeValue: 0,
+    slaStatus: 'Overdue',
+    slaDueAt: '2026-08-01T10:00:00',
+    city: 'Abha',
+    region: 'Asir',
+    interestedServices: ['Architectural Design', 'Surveying'],
+    estimatedBudget: 950000,
+    statusHistory: [
+      { id: 'sh21', to: 'New Lead', date: '2026-07-31', user: MOCK_USERS[6] },
+    ],
+    interactions: [],
+    documents: [],
+  },
+];
+
+// ============================================================
+// Module B2 — opportunities / quote requests
+// ============================================================
+
+export const MOCK_OPPORTUNITIES: Opportunity[] = [
+  {
+    id: 'OPP-2026-0012',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Sunset Villa Complex — Phase 2',
+    status: 'RFQ Raised',
+    priority: 'High',
+    services: ['Architectural Design', 'Structural Engineering', 'Site Supervision'],
+    departments: ['Architecture', 'Civil'],
+    scope: 'Extension of the existing villa complex onto the adjacent plot: 14 units, shared basement parking and a landscaped spine.',
+    city: 'Riyadh',
+    estimatedValue: 3100000,
+    expectedDecisionDate: '2026-09-15',
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-29',
+    reviewedBy: MOCK_USERS[5],
+    reviewedAt: '2026-07-30',
+    reviewNotes: 'Complete. Multi-department scope — routed to the project manager.',
+    assignmentRoute: 'Project Manager',
+    assignee: CURRENT_USER,
+    assignedAt: '2026-07-30',
+    rfqId: 'RFQ-2026-0031',
+    rfqRaisedAt: '2026-07-30',
+    documents: [
+      { id: 'od1', name: 'Quote_Request_Signed.pdf', category: 'Signed quote request', fileType: 'pdf', size: '640 KB', uploadedBy: MOCK_USERS[6], uploadDate: '2026-07-29', required: true },
+      { id: 'od2', name: 'Plot_Deed_412.pdf', category: 'Title deed / land document', fileType: 'pdf', size: '1.4 MB', uploadedBy: MOCK_USERS[6], uploadDate: '2026-07-29', required: true },
+    ],
+    history: [
+      { id: 'oe1', action: 'Opportunity created', date: '2026-07-29', user: MOCK_USERS[6] },
+      { id: 'oe2', action: 'Submitted for review', date: '2026-07-29', user: MOCK_USERS[6] },
+      { id: 'oe3', action: 'Marked complete', date: '2026-07-30', user: MOCK_USERS[5] },
+      { id: 'oe4', action: 'Assigned to project manager', date: '2026-07-30', user: MOCK_USERS[5], note: 'Alex Engineer' },
+      { id: 'oe5', action: 'RFQ raised — RFQ-2026-0031', date: '2026-07-30', user: CURRENT_USER },
+    ],
+  },
+  {
+    id: 'OPP-2026-0013',
+    clientId: 'CLIENT-2026-0005',
+    clientName: 'Ministry of Housing — Tender 4471',
+    title: 'Etimad 4471 — Housing districts design package',
+    status: 'Under Review',
+    priority: 'High',
+    services: ['Architectural Design', 'Structural Engineering', 'MEP Design'],
+    departments: ['Architecture', 'Civil', 'Modern'],
+    scope: 'Full design package for three housing districts as specified in the Etimad tender booklet. Submission deadline 20 Aug 2026.',
+    city: 'Riyadh',
+    estimatedValue: 4200000,
+    expectedDecisionDate: '2026-09-01',
+    owner: MOCK_USERS[5],
+    createdAt: '2026-07-31',
+    documents: [
+      { id: 'od3', name: 'Tender_Booklet_4471.pdf', category: 'Tender documents', fileType: 'pdf', size: '6.2 MB', uploadedBy: MOCK_USERS[5], uploadDate: '2026-07-31', required: true },
+    ],
+    history: [
+      { id: 'oe6', action: 'Opportunity created', date: '2026-07-31', user: MOCK_USERS[5] },
+      { id: 'oe7', action: 'Submitted for review', date: '2026-07-31', user: MOCK_USERS[5] },
+    ],
+  },
+  {
+    id: 'OPP-2026-0014',
+    clientId: 'CLIENT-2026-0004',
+    clientName: 'Reem Al Harbi',
+    title: 'Al Narjis private villa — design and permit',
+    status: 'Incomplete',
+    priority: 'Medium',
+    services: ['Architectural Design', 'Permit Management'],
+    departments: ['Architecture', 'Khitbrah'],
+    scope: 'Two-storey private villa, roughly 420 m². Client also wants the municipality permit handled end to end.',
+    city: 'Riyadh',
+    estimatedValue: 180000,
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-28',
+    reviewedBy: MOCK_USERS[5],
+    reviewedAt: '2026-07-29',
+    reviewNotes: 'Cannot price without the deed and the plot coordinates.',
+    missingItems: ['Title deed / land document', 'Site coordinates or plot number'],
+    documents: [],
+    history: [
+      { id: 'oe8', action: 'Opportunity created', date: '2026-07-28', user: MOCK_USERS[6] },
+      { id: 'oe9', action: 'Submitted for review', date: '2026-07-28', user: MOCK_USERS[6] },
+      { id: 'oe10', action: 'Returned as incomplete', date: '2026-07-29', user: MOCK_USERS[5], note: 'Missing deed and plot coordinates' },
+    ],
+  },
+  {
+    id: 'OPP-2026-0015',
+    clientId: 'CLIENT-2026-0003',
+    clientName: 'Al Nakheel Contracting',
+    title: 'Dammam warehouse — safety and supervision',
+    status: 'Submitted',
+    priority: 'Urgent',
+    services: ['Safety Consultation'],
+    departments: ['Safety'],
+    scope: 'Civil defence compliance review and monthly site supervision for a 6,000 m² warehouse.',
+    city: 'Dammam',
+    estimatedValue: 600000,
+    owner: MOCK_USERS[6],
+    createdAt: '2026-08-01',
+    documents: [
+      { id: 'od4', name: 'Warehouse_Layout.dwg', category: 'Existing drawings (if any)', fileType: 'dwg', size: '3.1 MB', uploadedBy: MOCK_USERS[6], uploadDate: '2026-08-01' },
+    ],
+    history: [
+      { id: 'oe11', action: 'Opportunity created', date: '2026-08-01', user: MOCK_USERS[6] },
+      { id: 'oe12', action: 'Submitted for review', date: '2026-08-01', user: MOCK_USERS[6] },
+    ],
+  },
+  {
+    id: 'OPP-2026-0009',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Sunset Villa Complex — Phase 1',
+    status: 'RFQ Raised',
+    priority: 'High',
+    services: ['Architectural Design', 'Structural Engineering'],
+    departments: ['Architecture', 'Civil'],
+    scope: 'Design and structural package for the first 12 villas plus the site entrance.',
+    city: 'Riyadh',
+    estimatedValue: 2450000,
+    owner: MOCK_USERS[6],
+    createdAt: '2024-09-25',
+    reviewedBy: MOCK_USERS[5],
+    reviewedAt: '2024-09-26',
+    assignmentRoute: 'Project Manager',
+    assignee: CURRENT_USER,
+    assignedAt: '2024-09-26',
+    rfqId: 'RFQ-2026-0028',
+    rfqRaisedAt: '2024-09-26',
+    documents: [],
+    history: [
+      { id: 'oe13', action: 'Opportunity created', date: '2024-09-25', user: MOCK_USERS[6] },
+      { id: 'oe14', action: 'RFQ raised — RFQ-2026-0028', date: '2024-09-26', user: CURRENT_USER },
+    ],
+  },
+  {
+    id: 'OPP-2026-0010',
+    clientId: 'CLIENT-2026-0002',
+    clientName: 'Sarah Connor',
+    title: 'Jeddah rooftop extension',
+    status: 'RFQ Raised',
+    priority: 'Medium',
+    services: ['Architectural Design'],
+    departments: ['Architecture'],
+    scope: 'Rooftop extension of about 90 m² over an existing two-storey house, including a shaded terrace.',
+    city: 'Jeddah',
+    estimatedValue: 220000,
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-30',
+    reviewedBy: MOCK_USERS[5],
+    reviewedAt: '2026-07-31',
+    assignmentRoute: 'Department Head',
+    assignee: MOCK_USERS[1],
+    assignedAt: '2026-07-31',
+    rfqId: 'RFQ-2026-0029',
+    rfqRaisedAt: '2026-07-31',
+    documents: [],
+    history: [
+      { id: 'oe15', action: 'Opportunity created', date: '2026-07-30', user: MOCK_USERS[6] },
+      { id: 'oe16', action: 'RFQ raised — RFQ-2026-0029', date: '2026-07-31', user: MOCK_USERS[5] },
+    ],
+  },
+  {
+    id: 'OPP-2026-0011',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Skyline head office fit-out',
+    status: 'RFQ Raised',
+    priority: 'High',
+    services: ['Architectural Design', 'MEP Design'],
+    departments: ['Architecture', 'Modern'],
+    scope: 'Interior fit-out of two floors, 1,800 m², including full MEP redesign and a server room.',
+    city: 'Riyadh',
+    estimatedValue: 890000,
+    owner: MOCK_USERS[6],
+    createdAt: '2026-07-24',
+    reviewedBy: MOCK_USERS[5],
+    reviewedAt: '2026-07-25',
+    assignmentRoute: 'Project Manager',
+    assignee: CURRENT_USER,
+    assignedAt: '2026-07-25',
+    rfqId: 'RFQ-2026-0030',
+    rfqRaisedAt: '2026-07-25',
+    documents: [],
+    history: [
+      { id: 'oe17', action: 'Opportunity created', date: '2026-07-24', user: MOCK_USERS[6] },
+      { id: 'oe18', action: 'RFQ raised — RFQ-2026-0030', date: '2026-07-25', user: CURRENT_USER },
+    ],
+  },
+];
+
+// ============================================================
+// Modules B3 / B4 — offer settings (module 12 will make these editable)
+// ============================================================
+
+export const VAT_RATE = 15;
+
+export const BANK_ACCOUNTS = [
+  'Al Rajhi Bank — SA03 8000 0000 6080 1016 7519',
+  'Saudi National Bank — SA44 1000 0012 3456 7890 1234',
+];
+
+export const DEFAULT_GREETING =
+  'Thank you for the opportunity to quote. Based on your requirements, we are pleased to submit the following proposal.';
+
+export const DEFAULT_CONCLUSION =
+  'We look forward to working with you. This offer is valid for 30 days from the issue date. For any clarification, please contact the assigned account manager.';
+
+export const RFQ_REJECT_REASONS: RfqRejectType[] = ['Wrong department', 'Extra documents needed', 'Other'];
+
+export const LOSS_REASONS = [
+  'Price too high',
+  'Lost to competitor',
+  'Scope mismatch',
+  'Budget unavailable',
+  'No response from client',
+  'Client cancelled the project',
+  'Other',
+];
+
+export const DEFAULT_INSTALLMENTS: Omit<Installment, 'id'>[] = [
+  { label: 'On signing', percentage: 30, rule: 'On signing' },
+  { label: 'On design submission', percentage: 40, rule: 'On stage completion' },
+  { label: 'On final delivery', percentage: 30, rule: 'On stage completion' },
+];
+
+/** Default approval chain — CFO first, then the general manager. */
+export const APPROVAL_CHAIN: { tier: number; approver: User }[] = [
+  { tier: 1, approver: MOCK_USERS[7] },
+  { tier: 2, approver: MOCK_USERS[8] },
+];
+
+// ============================================================
+// Module B3 — RFQs
+// ============================================================
+
+export const MOCK_RFQS: Rfq[] = [
+  {
+    id: 'RFQ-2026-0028',
+    opportunityId: 'OPP-2026-0009',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Sunset Villa Complex — Phase 1',
+    scope: 'Design and structural package for the first 12 villas plus the site entrance.',
+    services: ['Architectural Design', 'Structural Engineering'],
+    departments: ['Architecture', 'Civil'],
+    priority: 'High',
+    status: 'Quoted',
+    owner: MOCK_USERS[6],
+    receivedAt: '2024-09-26',
+    assignments: [
+      { id: 'ra1', department: 'Architecture', assignee: MOCK_USERS[1], isLead: true, status: 'Submitted' },
+      { id: 'ra2', department: 'Civil', assignee: MOCK_USERS[2], isLead: false, status: 'Submitted' },
+    ],
+    acceptedBy: MOCK_USERS[1],
+    acceptedAt: '2024-09-26',
+    approvals: [
+      { id: 'ap1', tier: 1, approver: MOCK_USERS[7], status: 'Approved', decidedAt: '2024-09-28' },
+      { id: 'ap2', tier: 2, approver: MOCK_USERS[8], status: 'Approved', decidedAt: '2024-09-29' },
+    ],
+    sentForApprovalAt: '2024-09-28',
+    approvedAt: '2024-09-29',
+    quotationId: 'QUO-2026-0020',
+    history: [
+      { id: 're1', action: 'RFQ received from sales', date: '2024-09-26', user: MOCK_USERS[6] },
+      { id: 're2', action: 'Accepted by department', date: '2024-09-26', user: MOCK_USERS[1] },
+      { id: 're3', action: 'Offer approved', date: '2024-09-29', user: MOCK_USERS[8] },
+      { id: 're4', action: 'Quotation issued — QUO-2026-0020', date: '2024-09-29', user: MOCK_USERS[1] },
+    ],
+  },
+  {
+    id: 'RFQ-2026-0029',
+    opportunityId: 'OPP-2026-0010',
+    clientId: 'CLIENT-2026-0002',
+    clientName: 'Sarah Connor',
+    title: 'Jeddah rooftop extension',
+    scope: 'Rooftop extension of about 90 m² over an existing two-storey house, including a shaded terrace.',
+    services: ['Architectural Design'],
+    departments: ['Architecture'],
+    priority: 'Medium',
+    status: 'Received',
+    owner: MOCK_USERS[6],
+    receivedAt: '2026-07-31',
+    assignments: [
+      { id: 'ra3', department: 'Architecture', assignee: MOCK_USERS[1], isLead: true, status: 'Not Started' },
+    ],
+    approvals: [],
+    history: [
+      { id: 're5', action: 'RFQ received from sales', date: '2026-07-31', user: MOCK_USERS[5] },
+    ],
+  },
+  {
+    id: 'RFQ-2026-0030',
+    opportunityId: 'OPP-2026-0011',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Skyline head office fit-out',
+    scope: 'Interior fit-out of two floors, 1,800 m², including full MEP redesign and a server room.',
+    services: ['Architectural Design', 'MEP Design'],
+    departments: ['Architecture', 'Modern'],
+    priority: 'High',
+    status: 'Pricing',
+    owner: MOCK_USERS[6],
+    receivedAt: '2026-07-25',
+    assignments: [
+      { id: 'ra4', department: 'Architecture', assignee: MOCK_USERS[1], isLead: true, status: 'In Progress' },
+      { id: 'ra5', department: 'Modern', assignee: CURRENT_USER, isLead: false, status: 'Submitted' },
+    ],
+    acceptedBy: MOCK_USERS[1],
+    acceptedAt: '2026-07-25',
+    approvals: [],
+    history: [
+      { id: 're6', action: 'RFQ received from sales', date: '2026-07-25', user: CURRENT_USER },
+      { id: 're7', action: 'Accepted by department', date: '2026-07-25', user: MOCK_USERS[1] },
+      { id: 're8', action: 'Pricing started', date: '2026-07-26', user: MOCK_USERS[1] },
+    ],
+  },
+  {
+    id: 'RFQ-2026-0031',
+    opportunityId: 'OPP-2026-0012',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Sunset Villa Complex — Phase 2',
+    scope: 'Extension of the existing villa complex onto the adjacent plot: 14 units, shared basement parking and a landscaped spine.',
+    services: ['Architectural Design', 'Structural Engineering', 'Site Supervision'],
+    departments: ['Architecture', 'Civil'],
+    priority: 'High',
+    status: 'Accepted',
+    owner: MOCK_USERS[6],
+    receivedAt: '2026-07-30',
+    assignments: [
+      { id: 'ra6', department: 'Architecture', assignee: MOCK_USERS[1], isLead: true, status: 'Not Started' },
+      { id: 'ra7', department: 'Civil', assignee: MOCK_USERS[2], isLead: false, status: 'Not Started' },
+    ],
+    acceptedBy: MOCK_USERS[1],
+    acceptedAt: '2026-07-31',
+    approvals: [],
+    history: [
+      { id: 're9', action: 'RFQ received from sales', date: '2026-07-30', user: CURRENT_USER },
+      { id: 're10', action: 'Accepted by department', date: '2026-07-31', user: MOCK_USERS[1] },
+    ],
+  },
+];
+
+// ============================================================
+// Module B4 — quotations
+// ============================================================
+
+export const MOCK_QUOTATIONS: Quotation[] = [
+  {
+    id: 'QUO-2026-0020',
+    version: 2,
+    rfqId: 'RFQ-2026-0028',
+    opportunityId: 'OPP-2026-0009',
+    clientId: 'CLIENT-2026-0001',
+    clientName: 'Skyline Developers',
+    title: 'Sunset Villa Complex — Phase 1',
+    status: 'Won',
+    owner: MOCK_USERS[6],
+    issueDate: '2024-09-29',
+    validUntil: '2024-10-29',
+    deliveryTimeline: '8 months from contract signature',
+    greeting: DEFAULT_GREETING,
+    services: ['Architectural Design', 'Structural Engineering'],
+    sections: [
+      {
+        id: 'qs1',
+        department: 'Architecture',
+        pricer: MOCK_USERS[1],
+        isLead: true,
+        scopeText: 'Concept design, design development and full architectural drawing set for 12 villas, plus the entrance gate and guard house.',
+        status: 'Submitted',
+        items: [
+          { id: 'qi1', description: 'Concept design — 12 villa typologies', quantity: 12, unit: 'unit', unitPrice: 45000 },
+          { id: 'qi2', description: 'Entrance gate and guard house design', quantity: 1, unit: 'lump sum', unitPrice: 120000 },
+        ],
+      },
+      {
+        id: 'qs2',
+        department: 'Civil',
+        pricer: MOCK_USERS[2],
+        isLead: false,
+        scopeText: 'Structural analysis and detailed drawings for all villas and the shared retaining walls.',
+        status: 'Submitted',
+        items: [
+          { id: 'qi3', description: 'Structural design — villas', quantity: 12, unit: 'unit', unitPrice: 95000 },
+          { id: 'qi4', description: 'Retaining wall design', quantity: 1, unit: 'lump sum', unitPrice: 190000 },
+        ],
+      },
+    ],
+    installments: [
+      { id: 'qp1', label: 'On signing', percentage: 30, rule: 'On signing' },
+      { id: 'qp2', label: 'On design submission', percentage: 40, rule: 'On stage completion' },
+      { id: 'qp3', label: 'On final delivery', percentage: 30, rule: 'On stage completion' },
+    ],
+    notes: 'Municipality fees are excluded and are paid directly by the client.',
+    bankAccount: BANK_ACCOUNTS[0],
+    conclusion: DEFAULT_CONCLUSION,
+    discount: 0,
+    vatRate: VAT_RATE,
+    sentAt: '2024-09-29',
+    wonAt: '2024-10-01',
+    poId: 'PO-2026-0011',
+    projectId: 'PRJ-2024-001',
+    versionHistory: [
+      { version: 1, date: '2024-09-29', user: MOCK_USERS[1], changeType: 'Initial', totalAmount: 2185000 },
+      { version: 2, date: '2024-09-30', user: MOCK_USERS[1], changeType: 'Price', totalAmount: 2450000, note: 'Added retaining wall package after the site visit' },
+    ],
+    history: [
+      { id: 'qe1', action: 'Quotation issued', date: '2024-09-29', user: MOCK_USERS[1] },
+      { id: 'qe2', action: 'Sent to client', date: '2024-09-29', user: MOCK_USERS[6] },
+      { id: 'qe3', action: 'Version 2 created — Price', date: '2024-09-30', user: MOCK_USERS[1] },
+      { id: 'qe4', action: 'Marked WON — PO-2026-0011 generated', date: '2024-10-01', user: MOCK_USERS[5] },
+    ],
+  },
 ];
 
 const MOCK_ACTIVITY: ActivityLog[] = [
