@@ -55,12 +55,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # SKIPPED — subject does not exist: root CLAUDE.md is not yet committed.
-      # ACTIVATE WITH: the PR that adds CLAUDE.md.  (ADR-0038: 200-line limit)
-      # - name: CLAUDE.md length check (ADR-0038)
-      #   run: |
-      #     lines=$(wc -l < CLAUDE.md)
-      #     [ "$lines" -le 200 ] || { echo "CLAUDE.md is $lines lines, limit is 200"; exit 1; }
+      # ACTIVATED 2026-08-08 by the PR that added CLAUDE.md, per the staged-activation
+      # rule. ADR-0038 caps the root file at 200 lines: an auto-generated or bloated
+      # context file measurably reduced task success in five of eight settings in the
+      # cited study, so the limit is a real constraint, not tidiness.
+      - name: CLAUDE.md length check (ADR-0038)
+        run: |
+          lines=$(wc -l < CLAUDE.md)
+          echo "CLAUDE.md is $lines lines (limit 200)"
+          [ "$lines" -le 200 ] || { echo "::error::CLAUDE.md is $lines lines, limit is 200"; exit 1; }
+
+      - name: Agent hooks are wired (ADR-0038)
+        run: |
+          # The hook script existing is not the same as the hook running. Until
+          # .claude/settings.json referenced it, the prototype freeze was
+          # discipline-only — the state ADR-0038 argues is insufficient.
+          node -e '
+            const s = require("./.claude/settings.json");
+            const pre = (s.hooks && s.hooks.PreToolUse) || [];
+            const wired = JSON.stringify(pre).includes("block-prototype-writes.sh");
+            if (!wired) { console.error("::error::PreToolUse is not wired to tools/block-prototype-writes.sh (ADR-0002, ADR-0038)"); process.exit(1); }
+            console.log("PreToolUse wired to the prototype-freeze hook");
+          '
 
   # ---------------------------------------------------------------------------
   # Gates that need an installed workspace.
