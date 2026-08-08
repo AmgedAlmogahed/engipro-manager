@@ -114,7 +114,7 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 |---|---|---|
 | **W1a — substrate** ✅ **Accepted 2026-08-08** | 0001, 0002 | These are not *governed by* the enforcement gate; they **are** the substrate it presupposes. Dependency-cruiser, CI, and the agent guardrails have nothing to run against until a workspace exists. |
 | **W1b — machinery** ✅ **Accepted 2026-08-08** | 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. Ratified **and installed** — running and green, not merely Accepted. Fully closed: the prototype-freeze hook is wired via `.claude/settings.json`, `CLAUDE.md` is committed and length-checked, and `$1` back-reference support is verified on dependency-cruiser 18.1.1 rather than assumed. |
-| **W2 — architecture shape** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | |
+| **W2 — architecture shape** ✅ **Accepted 2026-08-08** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | Shells scaffolded: `packages/domain`, `packages/contracts`, `apps/api`, `apps/web`. ADR-0008's live-fire demo run — it found that `no-vendor-in-domain-or-application` had never fired under pnpm. See ADR-0008. |
 | **W3 — data foundation** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | |
 | **W4 — identity and authorization** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
 | **W5 — platform mechanics** | 0024, then 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. |
