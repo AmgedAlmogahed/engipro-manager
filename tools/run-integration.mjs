@@ -9,7 +9,7 @@
  * count check where both sides were broken. The ADR-0048 standing rule applies here.
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = process.argv[2] ?? 'src';
@@ -42,4 +42,27 @@ if (!process.env.DATABASE_URL) {
 console.log(`run-integration: ${files.length} file(s)`);
 for (const f of files) console.log(`  ${f}`);
 
-execFileSync('../../node_modules/.bin/tsx', ['--test', ...files], { stdio: 'inherit' });
+/**
+ * Resolve the tsx binary instead of assuming a path.
+ *
+ * `../../node_modules/.bin/tsx` was wrong: under pnpm, tsx is a devDependency of
+ * apps/api and lives in `apps/api/node_modules/.bin`, not at the workspace root. The
+ * bug survived local testing because the DATABASE_URL guard above exits first on a
+ * machine with no database, so this line never ran until CI reached it.
+ *
+ * Same family as ADR-0008's vendor rule, which was written against npm's flat
+ * node_modules and never matched under pnpm: **any hardcoded node_modules path is a
+ * package-manager assumption.** Resolve, do not assume.
+ */
+const candidates = [
+  join('node_modules', '.bin', 'tsx'),
+  join('..', '..', 'node_modules', '.bin', 'tsx'),
+];
+const tsx = candidates.find((c) => existsSync(c));
+if (!tsx) {
+  console.error('run-integration: cannot find the tsx binary. Looked in:');
+  for (const c of candidates) console.error(`  ${c}`);
+  process.exit(1);
+}
+
+execFileSync(tsx, ['--test', ...files], { stdio: 'inherit' });
