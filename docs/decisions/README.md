@@ -77,12 +77,12 @@ Therefore: **an ADR without an enforcement mechanism is a suggestion, and sugges
 ### Conditional and deferred
 | ADR | Decision |
 |---|---|
-| [0039](ADR-0039.md) | ZATCA e-invoicing applicability — **BLOCKED** |
+| [0039](ADR-0039.md) | ZATCA e-invoicing applicability — **Accepted**, applies |
 | [0040](ADR-0040.md) | Multi-currency deferred |
 | [0041](ADR-0041.md) | Service level objectives |
-| [0042](ADR-0042.md) | Audit retention — **BLOCKED** |
-| [0043](ADR-0043.md) | Multi-role conflict resolution — **BLOCKED** |
-| [0044](ADR-0044.md) | Explicit deny — **BLOCKED** |
+| [0042](ADR-0042.md) | Audit retention — **Accepted** |
+| [0043](ADR-0043.md) | Multi-role conflict resolution — **Superseded by 0049** |
+| [0044](ADR-0044.md) | Explicit deny — **Accepted**, dropped |
 | [0045](ADR-0045.md) | No cutover or data migration |
 
 ### Added during the completeness check
@@ -96,10 +96,46 @@ These were not in the agreed decision set. Each closes a conflict-register item 
 
 Also added inline, for the same reason: [0009](ADR-0009.md) testing strategy, [0014](ADR-0014.md) table conventions and migration lint, [0015](ADR-0015.md) primary keys, [0018](ADR-0018.md) time and calendars, [0019](ADR-0019.md) bilingual content, [0035](ADR-0035.md) secrets.
 
+### Added while resolving the blocked decisions (2026-08-08)
+
+| ADR | Decision | Status |
+|---|---|---|
+| [0049](ADR-0049.md) | Multi-role resolution and approval authority limits | **Accepted** — supersedes 0043 |
+| [0050](ADR-0050.md) | Frontend application stack for `apps/web` | **Accepted** |
+| 0051 | Offline sync strategy | **Reserved, not yet written** |
+
+**0051 is a known gap, deliberately recorded rather than left implicit.** The requirements call for offline support for mobile sales reps and no ADR says how it works. Hand-rolling a mutation queue with replay and conflict resolution on a *quotation* system risks two divergent versions of a price, which is a correctness problem with financial consequences. It should land as `Proposed — BLOCKED` pending a spike that compares a local-first sync engine against hand-rolling, evaluated specifically against RLS (ADR-0022) and `organization_id` scoping (ADR-0017). The number is held so the gap cannot be forgotten.
+
+## Ratification order
+
+Statuses are not all moved at once. The waves below are a **review order**, derived from dependency shape:
+
+| Wave | ADRs | Why here |
+|---|---|---|
+| **W1 — enforcement machinery** | 0001, 0002, 0003, 0008, 0037, 0038 | Every other ADR's Enforcement section assumes CI, dependency-cruiser, and the agent guardrails exist. Accepting a decision whose enforcement mechanism is itself unratified is how the predecessor got C1. |
+| **W2 — architecture shape** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | |
+| **W3 — data foundation** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | |
+| **W4 — identity and authorization** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
+| **W5 — platform mechanics** | 0024, then 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. |
+| **W6 — infrastructure** | 0031, 0032, 0033, 0034, 0035, 0036, 0041 | |
+| **W7 — conditional and scope** | 0039, 0040, 0045, 0046, 0047, 0048 | |
+
+**Three gates, in plain terms:**
+
+1. **No code before W1.**
+2. **No migration before W3 and W4.**
+3. **No domain module before [0048](ADR-0048.md) and its `docs/mined/` documents** ([0003](ADR-0003.md)). 0048 is listed last by dependency but is a hard gate on domain code — if domain work is reached before W7, pull 0048 forward.
+
+Two things are already ratified ahead of their wave, deliberately: **0039, 0042, 0044, 0049** because they were blocking, and the **0032 amendment** for the frontend topology, because an unratified framework assumption sitting inside an infrastructure document for the duration of W1–W5 is the C1 shape — a stale assumption surviving because the document that contradicts it is somewhere else.
+
+**Scope caveat on the waves**: this is *sequencing*, not a content review of all 50 bodies. Treat a wave as "safe to review together", not "known correct".
+
 ## Writing a new ADR
 
 ```bash
 cp docs/decisions/TEMPLATE.md docs/decisions/ADR-00NN.md
 ```
 
-Numbering is sequential and permanent. A reversed decision gets a new ADR that supersedes the old one; the old file is never edited except to change its Status line.
+Numbering is sequential and permanent. A reversed decision gets a new ADR that supersedes the old one.
+
+A superseded file's **body is never rewritten** — it is the record of the reasoning that led somewhere. It may gain two things and nothing else: its new `Status` line, and a note directly beneath it stating what superseded it and why, including any part of the body that must not be implemented. ADR-0043 is the worked example. Editing a superseded body to make it look correct in hindsight destroys the only thing it is still for.
