@@ -36,7 +36,10 @@ test('the User aggregate exposes no role', () => {
     id: 'u1', organizationId: 'o1', email: 'a@b.c',
     nameAr: 'أ', nameEn: 'A', departmentId: null,
   });
-  const snapshot = u.toSnapshot() as Record<string, unknown>;
+  // `as unknown as` is required: UserSnapshot has no index signature, and TypeScript
+  // rejects the direct assertion. Worth keeping the double cast rather than widening
+  // UserSnapshot — the snapshot type being closed is part of what this test asserts.
+  const snapshot = u.toSnapshot() as unknown as Record<string, unknown>;
   for (const key of ['role', 'roles', 'userRole', 'permissions']) {
     assert.equal(key in snapshot, false, `snapshot must not carry "${key}" — that is C1's root`);
   }
