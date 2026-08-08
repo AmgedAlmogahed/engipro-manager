@@ -117,7 +117,7 @@ Statuses are not all moved at once. The waves below are a **review order**, deri
 | **W2 — architecture shape** ✅ **Accepted 2026-08-08** | 0004, 0005, 0006, 0007, 0009, 0010, 0011 | Shells scaffolded: `packages/domain`, `packages/contracts`, `apps/api`, `apps/web`. ADR-0008's live-fire demo run — it found that `no-vendor-in-domain-or-application` had never fired under pnpm. See ADR-0008. |
 | **W3 — data foundation** ✅ **Accepted 2026-08-08** | 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0023, 0025 | **No migration may land yet**: the ADR-0011/0013 multi-schema PoC and the ADR-0014 migration-lint live-fire are both unmet entry conditions. |
 | **W4 — identity and authorization** ✅ **Accepted 2026-08-08** | 0020, 0021, 0022, 0044, 0049 | 0049 is written and Accepted in the same sitting as 0043's supersede, so authorization is never in a state where the approval control is described nowhere. |
-| **W5 — platform mechanics** | 0024, then 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. |
+| **W5 — platform mechanics** ✅ **Accepted 2026-08-08** | 0024, 0042, 0026, 0027, 0028, 0029, 0030 | 0042 depends on both 0024 and 0039. ADR-0029's first consumer is the identity `User` status machine — read `apps/api/src/modules/identity/domain/user.ts` before adding a state machine elsewhere. |
 | **W6 — infrastructure** | 0031, 0032, 0033, 0034, 0035, 0036, 0041 | |
 | **W7 — conditional and scope** | 0039 ✅, 0040, 0045, 0046, 0047, 0048 ✅ | 0048 was **pulled forward and accepted 2026-08-08** at the domain-code threshold, per gate 3. Its glossary and lint are installed and live-fired. |
 

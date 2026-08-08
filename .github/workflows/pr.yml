@@ -56,6 +56,11 @@ jobs:
       - name: Glossary lint (ADR-0048, C13)
         run: node tools/check-glossary.mjs
 
+      # ACTIVATED 2026-08-08 by the PR that added the first module with a domain/.
+      # Caught a real gap on its first run: the health module had no tier declaration.
+      - name: Module tiers (ADR-0007)
+        run: node tools/check-module-tiers.mjs
+
       - name: Secret scan (ADR-0035)
         uses: gitleaks/gitleaks-action@v2
         env:
@@ -158,10 +163,16 @@ jobs:
           pnpm --filter @engipro/web build
           node tools/assert-no-cdn.mjs apps/web/dist/index.html
 
-      # SKIPPED — subject does not exist: no test suites.
-      # ACTIVATE WITH: the PR that adds the first test.  (ADR-0009)
-      # - name: Unit + use-case tests
-      #   run: pnpm test:unit
+      # ACTIVATED 2026-08-08 by the PR that added the identity domain layer.
+      # 27 assertions pass; 6 are skipped and each states which lane it needs.
+      - name: Unit + domain tests (ADR-0009, ADR-0029)
+        run: pnpm --filter @engipro/api test
+
+      # SKIPPED — subject does not exist: no integration lane yet.
+      # ACTIVATE WITH: the PR that lands the integration harness. Its service-container
+      # pattern is already written once, in .github/workflows/poc-multischema.yml, and
+      # the six c<NN> specs already contain their DB-dependent assertions as skipped
+      # tests naming this lane.  (ADR-0009, ADR-0037)
       # - name: Integration tests (real PostgreSQL)
       #   run: pnpm test:integration
 

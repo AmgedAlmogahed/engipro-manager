@@ -6,7 +6,8 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "typecheck": "tsc --noEmit",
-    "test:adapter": "tsx --test src/**/*.smoke.test.ts"
+    "test:adapter": "tsx --test \"src/**/*.smoke.test.ts\"",
+    "test": "tsx --test \"src/**/*.spec.ts\""
   },
   "dependencies": {
     "@fastify/static": "catalog:",

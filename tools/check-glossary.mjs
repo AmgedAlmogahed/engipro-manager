@@ -81,9 +81,33 @@ function walk(dir, acc = []) {
 const fixtureIdx = process.argv.indexOf('--fixture');
 const files = fixtureIdx !== -1 ? [process.argv[fixtureIdx + 1]] : SCAN_DIRS.flatMap((d) => walk(d));
 
+/**
+ * Comments are stripped from TypeScript before scanning, and this is a deliberate
+ * scope decision rather than a loophole.
+ *
+ * The harm C13 describes is one concept carrying two names **in the code**: a model
+ * called `ServiceCategory` while every other layer said Department, including the
+ * authorization path. A comment cannot become an identifier, a column, or an API
+ * field.
+ *
+ * And the alternative is incoherent with ADR-0003, which requires conflict-register
+ * items to be quoted **verbatim** — every such quote names the rejected term by
+ * definition. C1's text is literally "Hardcoded UserRole checks live beside the
+ * permission engine". A lint that forbids writing that sentence forbids documenting
+ * the defect it exists to prevent.
+ *
+ * `.sql` and `.json` are scanned whole: neither has comments in the forms below, and
+ * both contain nothing but names.
+ */
+function stripTsComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
 const findings = [];
 for (const file of files) {
-  const lines = readFileSync(file, 'utf8').split('\n');
+  const raw = readFileSync(file, 'utf8');
+  const scannable = /\.tsx?$/.test(file) ? stripTsComments(raw) : raw;
+  const lines = scannable.split('\n');
   lines.forEach((line, i) => {
     // An eslint-style opt-out is deliberately NOT supported. ADR-0008's suppression
     // policy applies: an exception is a glossary change, reviewed, never an inline

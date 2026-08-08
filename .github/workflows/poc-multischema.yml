@@ -1,0 +1,80 @@
+# Multi-schema proof of concept — an ENTRY CONDITION for the first migration.
+# (ADR-0011 rider, ADR-0013)
+#
+# ADR-0011's own text says to validate the schema layout with a proof of concept before
+# committing to it. The rider elevates that to a gate: no migration lands until this
+# passes, and if it fails, the one-day Prisma bake-off triggers rather than the schema
+# layout being bent to suit the tool.
+#
+# WHY THIS IS A WORKFLOW AND NOT A LOCAL SCRIPT. After nine environment-contamination
+# defects on this branch — a boundary rule that never matched under pnpm, a lint that
+# parsed zero rules, a typecheck passing against types resolved from a stale
+# node_modules — a proof of concept produced on a developer machine is unreviewable by
+# construction. "Recorded in ADR-0011" has to mean a reader can re-run it and see the
+# same result. Hence: retained, dispatchable, service container.
+#
+# This job is also the TEMPLATE for the integration-test stage of ADR-0037. The
+# service-container pattern is written once here.
+
+name: PoC — multi-schema
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/poc/multischema/**'
+      - 'packages/database/**'
+      - '.github/workflows/poc-multischema.yml'
+
+jobs:
+  multischema:
+    name: Drizzle multi-schema and cross-schema migration ordering
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: poc
+          POSTGRES_USER: poc
+          POSTGRES_DB: poc
+        ports: ['5432:5432']
+        # Without a health check the first connection races container startup and the
+        # job fails intermittently — which then reads as "the PoC is flaky" rather than
+        # "the harness is wrong".
+        options: >-
+          --health-cmd "pg_isready -U poc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard — the PoC must exist
+        run: |
+          if [ ! -d tools/poc/multischema ]; then
+            echo "::error::tools/poc/multischema is missing. This workflow exists to run" \
+                 "the ADR-0011 gate; passing with nothing to run would be the exact" \
+                 "false-green this repository keeps finding."
+            exit 1
+          fi
+
+      - name: Run the proof of concept
+        env:
+          DATABASE_URL: postgres://poc:poc@localhost:5432/poc
+        run: node tools/poc/multischema/run.mjs
+
+      - name: Record
+        if: always()
+        run: |
+          echo "Record the outcome in ADR-0011's status block, pass or fail, with the"
+          echo "run URL. ADR-0008's live-fire result is the format to follow."

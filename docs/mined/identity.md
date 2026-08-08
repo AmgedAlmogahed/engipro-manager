@@ -161,4 +161,4 @@ Illegal (the suite asserts these throw): `archived → *` (terminal), any self-t
 | b. Invitation flow: admin-creates-with-temp-password vs email invite link (SMTP dependency day one?) | User (morning question) | `invited` state implementation, not the schema |
 | ~~c. User names: structured first/last vs bilingual display names~~ | **RESOLVED 2026-08-08** | No structured split. `name_ar`/`name_en` only — recorded in ADR-0019. Saudi B2B documents carry a full name; a consultancy's quotations, POs and contracts never decompose it |
 | d. Password policy + 2FA scope for launch | ADR-0020 | Nothing at schema level |
-| e. System actor representation: service-account user row vs synthetic well-known id in audit | ADR-0020 + ADR-0024 (W4/W5) | Audit FK shape for cron writes |
+| ~~e. System actor representation~~ | **RESOLVED 2026-08-08** | `actor_id NULL` + `actor_type = 'system'` on the audit row (ADR-0024). No service-account user rows: a synthetic user would appear in user lists, be assignable, and be grantable roles — a fake human is worse than an explicit null |
